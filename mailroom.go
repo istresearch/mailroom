@@ -3,6 +3,7 @@ package mailroom
 import (
 	"context"
 	"fmt"
+	"github.com/nyaruka/gocommon/urns"
 	"net/url"
 	"os"
 	"strings"
@@ -213,6 +214,11 @@ func (mr *Mailroom) Start() error {
 	// start our web server
 	mr.webserver = web.NewServer(mr.CTX, mr.Config, mr.DB, mr.RP, mr.S3Client, mr.ElasticClient, mr.WaitGroup)
 	mr.webserver.Start()
+
+	//handle custom schemes
+	for _,v := range strings.Split(mr.Config.CustomSchemes, ",") {
+		urns.ValidSchemes[strings.Trim(v, " ")] = true
+	}
 
 	logrus.Info("mailroom started")
 

@@ -61,6 +61,8 @@ type Config struct {
 	AuthToken string `help:"the token clients will need to authenticate web requests"`
 	Address   string `help:"the address to bind our web server to"`
 	Port      int    `help:"the port to bind our web server to"`
+
+	CustomSchemes string `help:"custom schemes not included in the defaults, comma-separated"`
 }
 
 // NewMailroomConfig returns a new default configuration object
@@ -98,6 +100,8 @@ func NewMailroomConfig() *Config {
 
 		Address: "localhost",
 		Port:    8090,
+
+		CustomSchemes: "",
 	}
 }
 

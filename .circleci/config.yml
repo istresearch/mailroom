@@ -1,0 +1,50 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: docker:18.03.0
+
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run:
+          name: "Build and push Docker image"
+          command: |
+            IMAGE_NAME=istresearch/mailroom
+            BRANCH=${CIRCLE_BRANCH#*/}
+            VERSION=`cat VERSION`
+
+            # tagged release
+            if [[ ! -z $CIRCLE_TAG ]]; then
+              VERSION_TAG="${VERSION}"
+            elif [[ $BRANCH == "develop" ]]; then
+              VERSION_TAG="${VERSION}-dev"
+            else
+              VERSION_TAG="ci-${VERSION}-dev-${BRANCH}"
+            fi
+
+            docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
+            docker build --build-arg BUILD_NUMBER=$CIRCLE_BUILD_NUM -t $IMAGE_NAME:$VERSION_TAG -f Dockerfile .
+            docker push $IMAGE_NAME:$VERSION_TAG
+
+            if [[ $BRANCH == "develop" ]]; then
+              docker tag $IMAGE_NAME:$VERSION_TAG $IMAGE_NAME:ci-develop
+              docker push $IMAGE_NAME:ci-develop
+              echo "No deploy yet"
+              # Autodeploy magic here
+            else
+              echo "Skipping ci-develop tag"
+            fi
+
+
+workflows:
+  version: 2
+  mailroom:
+    jobs:
+      - build:
+          context: globalconfig
+          filters:
+            tags:
+              ignore: /^test-.*/
