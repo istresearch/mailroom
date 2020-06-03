@@ -41,3 +41,5 @@ require (
 )
 
 go 1.13
+
+replace github.com/nyaruka/goflow v0.77.4 => github.com/istresearch/goflow v0.77.4-1
