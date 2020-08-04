@@ -11,7 +11,7 @@ import (
 
 	"github.com/nyaruka/mailroom/config"
 	"github.com/nyaruka/mailroom/models"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/go-chi/chi"

@@ -10,7 +10,7 @@ import (
 	"github.com/nyaruka/goflow/envs"
 	"github.com/nyaruka/goflow/utils"
 	"github.com/nyaruka/goflow/utils/dates"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )

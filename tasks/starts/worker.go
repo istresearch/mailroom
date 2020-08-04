@@ -14,7 +14,7 @@ import (
 	"github.com/nyaruka/mailroom/models"
 	"github.com/nyaruka/mailroom/queue"
 	"github.com/nyaruka/mailroom/runner"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
