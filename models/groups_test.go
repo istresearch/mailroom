@@ -9,7 +9,7 @@ import (
 	"github.com/nyaruka/goflow/utils/uuids"
 	"github.com/nyaruka/mailroom/search"
 	"github.com/nyaruka/mailroom/testsuite"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"github.com/stretchr/testify/assert"
 )
 
