@@ -20,7 +20,7 @@ import (
 	"github.com/nyaruka/goflow/utils/uuids"
 	"github.com/nyaruka/mailroom/search"
 	"github.com/nyaruka/null"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -266,10 +266,10 @@ func ContactIDsForQueryPage(ctx context.Context, client *elastic.Client, org *Or
 		"query":       query,
 		"elapsed":     time.Since(start),
 		"page_count":  len(ids),
-		"total_count": results.Hits.TotalHits,
+		"total_count": results.Hits.TotalHits.Value,
 	}).Debug("paged contact query complete")
 
-	return parsed, ids, results.Hits.TotalHits, nil
+	return parsed, ids, results.Hits.TotalHits.Value, nil
 }
 
 // ContactIDsForQuery returns the ids of all the contacts that match the passed in query

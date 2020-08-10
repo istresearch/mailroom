@@ -23,7 +23,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/librato"
-	"github.com/olivere/elastic"
+	"github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 )
 
@@ -191,7 +191,7 @@ func (mr *Mailroom) Start() error {
 		elastic.SetSniff(false),
 	)
 	if err != nil {
-		log.WithError(err).Error("unable to connect to elastic, check configuration")
+		return fmt.Errorf("unable to connect to elastic, check configuration: %s", err)
 	} else {
 		log.Info("elastic ok")
 	}
