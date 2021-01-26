@@ -110,6 +110,8 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/istresearch/goflow v0.77.4-1/go.mod h1:LoRoyfHkJNVEY34AH3qDSDf7Vdq7Ztj47kNx6ceWp4I=
 github.com/istresearch/goflow v0.94.2-1 h1:CiJNuJ0uiJAOXZAKxn0Tfj2FGfs/YGvkWuVRZJxuSxY=
 github.com/istresearch/goflow v0.94.2-1/go.mod h1:PDah2hr5WzODnUFK4VWWQkg7SqnYclf7P9Ik5u/VOG0=
+github.com/istresearch/goflow v0.94.2-2 h1:WmIoxdeF6oCzo+ltWfV8Q2ewLfe0Ytm+90enawXhEgI=
+github.com/istresearch/goflow v0.94.2-2/go.mod h1:PDah2hr5WzODnUFK4VWWQkg7SqnYclf7P9Ik5u/VOG0=
 github.com/istresearch/goflow v0.94.2-test h1:PW6OShGvplH1uyIl5zew4QOgwlfY6X3P2CayM0n+MEs=
 github.com/istresearch/goflow v0.94.2-test/go.mod h1:PDah2hr5WzODnUFK4VWWQkg7SqnYclf7P9Ik5u/VOG0=
 github.com/istresearch/goflow v0.106.1-test h1:uPWxOtqd9yXzH+z5DkAySPdx/vQ9JtHF0AKxynzD4tE=
