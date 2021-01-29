@@ -168,6 +168,28 @@ func (h *CommitMessagesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *redis.P
 		return errors.Wrapf(err, "error writing messages")
 	}
 
+	labelAdds := make([]*models.MsgLabelAdd, 0)
+	for _, msg := range msgs {
+		for _,l := range msg.Labels() {
+			label := oa.LabelByUUID(l.UUID)
+			if label == nil {
+				return errors.Errorf("unable to find label with UUID: %s", l.UUID)
+			}
+
+			// get msg ID
+			add := new(models.MsgLabelAdd)
+			add.MsgID = models.MsgID(msg.ID())
+			add.LabelID = label.ID()
+			labelAdds = append(labelAdds, add)
+		}
+	}
+
+	if len(labelAdds) > 0 {
+		if err = models.AddMsgLabels(ctx, tx, labelAdds); err != nil {
+			return errors.Wrapf(err, "error adding labels to messages")
+		}
+	}
+
 	return nil
 }
 
@@ -228,6 +250,8 @@ func handleMsgCreated(ctx context.Context, tx *sqlx.Tx, rp *redis.Pool, oa *mode
 
 	// don't send messages for surveyor flows
 	if scene.Session().SessionType() != models.SurveyorFlow {
+		msg.SetLabels(event.Msg.Labels)
+
 		scene.AppendToEventPostCommitHook(sendMessagesHook, msg)
 	}
 
