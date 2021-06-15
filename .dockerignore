@@ -1,0 +1,6 @@
+.circleci
+.idea
+.git*
+.dockerignore
+*.md
+Dockerfile

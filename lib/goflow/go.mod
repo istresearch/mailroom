@@ -5,9 +5,11 @@ require (
 	github.com/antlr/antlr4 v0.0.0-20200417160354-8c50731894e0
 	github.com/blevesearch/segment v0.9.0
 	github.com/buger/jsonparser v0.0.0-20200322175846-f7e751efca13
+	github.com/fortytw2/leaktest v1.3.0 // indirect
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.1 // indirect
 	github.com/nyaruka/gocommon v1.2.0
