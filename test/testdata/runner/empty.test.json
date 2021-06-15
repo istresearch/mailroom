@@ -1,0 +1,124 @@
+{
+    "outputs": [
+        {
+            "events": [],
+            "session": {
+                "contact": {
+                    "created_on": "2000-01-01T00:00:00Z",
+                    "fields": {
+                        "first_name": {
+                            "text": "Ben"
+                        },
+                        "state": {
+                            "state": "Ecuador > Azuay",
+                            "text": "Ecuador > Azuay"
+                        }
+                    },
+                    "id": 1234567,
+                    "language": "eng",
+                    "name": "Ben Haggerty",
+                    "status": "active",
+                    "timezone": "America/Guayaquil",
+                    "urns": [
+                        "tel:+12065551212",
+                        "facebook:1122334455667788",
+                        "mailto:ben@macklemore"
+                    ],
+                    "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+                },
+                "environment": {
+                    "date_format": "YYYY-MM-DD",
+                    "max_value_length": 640,
+                    "number_format": {
+                        "decimal_symbol": ".",
+                        "digit_grouping_symbol": ","
+                    },
+                    "redaction_policy": "none",
+                    "time_format": "tt:mm",
+                    "timezone": "UTC"
+                },
+                "runs": [
+                    {
+                        "created_on": "2018-07-06T12:30:00.123456789Z",
+                        "exited_on": "2018-07-06T12:30:03.123456789Z",
+                        "expires_on": "2018-07-06T12:30:01.123456789Z",
+                        "flow": {
+                            "name": "Empty Flow",
+                            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02"
+                        },
+                        "modified_on": "2018-07-06T12:30:03.123456789Z",
+                        "path": [],
+                        "status": "completed",
+                        "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716"
+                    }
+                ],
+                "status": "completed",
+                "trigger": {
+                    "contact": {
+                        "created_on": "2000-01-01T00:00:00Z",
+                        "fields": {
+                            "first_name": {
+                                "text": "Ben"
+                            },
+                            "state": {
+                                "state": "Ecuador > Azuay",
+                                "text": "Ecuador > Azuay"
+                            }
+                        },
+                        "id": 1234567,
+                        "language": "eng",
+                        "name": "Ben Haggerty",
+                        "status": "active",
+                        "timezone": "America/Guayaquil",
+                        "urns": [
+                            "tel:+12065551212",
+                            "facebook:1122334455667788",
+                            "mailto:ben@macklemore"
+                        ],
+                        "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+                    },
+                    "flow": {
+                        "name": "Registration",
+                        "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02"
+                    },
+                    "triggered_on": "2000-01-01T00:00:00Z",
+                    "type": "manual"
+                },
+                "type": "messaging",
+                "uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+            }
+        }
+    ],
+    "resumes": [],
+    "trigger": {
+        "contact": {
+            "created_on": "2000-01-01T00:00:00.000000000-00:00",
+            "fields": {
+                "first_name": {
+                    "text": "Ben"
+                },
+                "state": {
+                    "state": "Ecuador > Azuay",
+                    "text": "Ecuador > Azuay"
+                }
+            },
+            "id": 1234567,
+            "language": "eng",
+            "name": "Ben Haggerty",
+            "status": "active",
+            "timezone": "America/Guayaquil",
+            "urns": [
+                "tel:+12065551212",
+                "facebook:1122334455667788",
+                "mailto:ben@macklemore"
+            ],
+            "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+        },
+        "flow": {
+            "name": "Registration",
+            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02"
+        },
+        "triggered_on": "2000-01-01T00:00:00.000000000-00:00",
+        "type": "manual"
+    }
+}

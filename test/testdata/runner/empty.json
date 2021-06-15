@@ -1,0 +1,53 @@
+{
+    "flows": [
+        {
+            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+            "name": "Empty Flow",
+            "spec_version": "13.0",
+            "language": "eng",
+            "type": "messaging",
+            "nodes": []
+        }
+    ],
+    "fields": [
+        {
+            "uuid": "2ddd4c1b-e3cf-472e-b135-440b3453ba37",
+            "key": "first_name",
+            "name": "First Name",
+            "type": "text"
+        },
+        {
+            "uuid": "c88d2640-d124-438a-b666-5ec53a353dcd",
+            "key": "activation_token",
+            "name": "Activation Token",
+            "type": "text"
+        },
+        {
+            "uuid": "d66a7823-eada-40e5-9a3a-57239d4690bf",
+            "key": "gender",
+            "name": "Gender",
+            "type": "text"
+        },
+        {
+            "uuid": "b0078eb8-1d51-4cb5-bf09-119e201e6518",
+            "key": "state",
+            "name": "State",
+            "type": "state"
+        }
+    ],
+    "groups": [
+        {
+            "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+            "name": "Android Channel",
+            "address": "+17036975131",
+            "schemes": [
+                "tel"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ],
+            "country": "US"
+        }
+    ]
+}

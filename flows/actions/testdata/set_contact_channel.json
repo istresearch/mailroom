@@ -1,0 +1,142 @@
+[
+    {
+        "description": "Error event if session has no contact",
+        "no_contact": true,
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": {
+                "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                "name": "My Android Phone"
+            }
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "can't execute action in session without a contact"
+            }
+        ]
+    },
+    {
+        "description": "NOOP if channel doesn't change",
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": {
+                "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                "name": "My Android Phone"
+            }
+        },
+        "events": []
+    },
+    {
+        "description": "URNs changed event if channel is changed",
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": {
+                "uuid": "3a05eaf5-cb1b-4246-bef1-f277419c83a7",
+                "name": "Nexmo"
+            }
+        },
+        "events": [
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "tel:+12065551212?channel=3a05eaf5-cb1b-4246-bef1-f277419c83a7&id=123",
+                    "twitterid:54784326227#nyaruka"
+                ]
+            }
+        ]
+    },
+    {
+        "description": "URNs changed event if channel is changed on non-tel URN without an existing channel",
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": {
+                "uuid": "8e21f093-99aa-413b-b55b-758b54308fcb",
+                "name": "Twitter Channel"
+            }
+        },
+        "events": [
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "twitterid:54784326227?channel=8e21f093-99aa-413b-b55b-758b54308fcb#nyaruka",
+                    "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123"
+                ]
+            }
+        ]
+    },
+    {
+        "description": "URNs changed event if channel is cleared",
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": null
+        },
+        "events": [
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "tel:+12065551212?id=123",
+                    "twitterid:54784326227#nyaruka"
+                ]
+            }
+        ]
+    },
+    {
+        "description": "Error event and NOOP for missing channel",
+        "action": {
+            "type": "set_contact_channel",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "channel": {
+                "uuid": "33382939-babf-4982-9395-8793feb4e7c6",
+                "name": "My Phone"
+            }
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "missing dependency: channel[uuid=33382939-babf-4982-9395-8793feb4e7c6,name=My Phone]"
+            }
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "uuid": "33382939-babf-4982-9395-8793feb4e7c6",
+                    "name": "My Phone",
+                    "type": "channel",
+                    "missing": true
+                }
+            ],
+            "issues": [
+                {
+                    "type": "missing_dependency",
+                    "node_uuid": "72a1f5df-49f9-45df-94c9-d86f7ea064e5",
+                    "action_uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+                    "description": "missing channel dependency '33382939-babf-4982-9395-8793feb4e7c6'",
+                    "dependency": {
+                        "uuid": "33382939-babf-4982-9395-8793feb4e7c6",
+                        "name": "My Phone",
+                        "type": "channel"
+                    }
+                }
+            ],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    }
+]

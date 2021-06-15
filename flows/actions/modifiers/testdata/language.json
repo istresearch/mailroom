@@ -1,0 +1,93 @@
+[
+    {
+        "description": "language changed event if language changed",
+        "contact_before": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Bob",
+            "status": "active",
+            "language": "eng",
+            "created_on": "2018-06-20T11:40:30.123456789Z"
+        },
+        "modifier": {
+            "type": "language",
+            "language": "fra"
+        },
+        "contact_after": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Bob",
+            "language": "fra",
+            "status": "active",
+            "created_on": "2018-06-20T11:40:30.123456789Z",
+            "groups": [
+                {
+                    "uuid": "aa704054-95ea-49e4-b9d7-12090afb5403",
+                    "name": "Francophones"
+                }
+            ]
+        },
+        "events": [
+            {
+                "type": "contact_language_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "language": "fra"
+            },
+            {
+                "type": "contact_groups_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "groups_added": [
+                    {
+                        "uuid": "aa704054-95ea-49e4-b9d7-12090afb5403",
+                        "name": "Francophones"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "description": "noop if language unchanged",
+        "contact_before": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "status": "active",
+            "language": "eng",
+            "created_on": "2018-06-20T11:40:30.123456789Z"
+        },
+        "modifier": {
+            "type": "language",
+            "language": "eng"
+        },
+        "contact_after": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "language": "eng",
+            "status": "active",
+            "created_on": "2018-06-20T11:40:30.123456789Z"
+        },
+        "events": []
+    },
+    {
+        "description": "clears language if value is empty",
+        "contact_before": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Bob",
+            "status": "active",
+            "language": "eng",
+            "created_on": "2018-06-20T11:40:30.123456789Z"
+        },
+        "modifier": {
+            "type": "language",
+            "language": ""
+        },
+        "contact_after": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Bob",
+            "status": "active",
+            "created_on": "2018-06-20T11:40:30.123456789Z"
+        },
+        "events": [
+            {
+                "type": "contact_language_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "language": ""
+            }
+        ]
+    }
+]

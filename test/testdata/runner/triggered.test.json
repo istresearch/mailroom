@@ -1,0 +1,244 @@
+{
+    "outputs": [
+        {
+            "events": [
+                {
+                    "created_on": "2018-07-06T12:30:04.123456789Z",
+                    "msg": {
+                        "channel": {
+                            "name": "Android Channel",
+                            "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d"
+                        },
+                        "text": "Hi Ben Haggerty you were started in this flow by Bob from the 'Parent Flow' flow. He is from Esmeraldas and is aged 33.",
+                        "urn": "tel:+12065551212",
+                        "uuid": "c34b6c7d-fa06-4563-92a3-d648ab64bccb"
+                    },
+                    "step_uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094",
+                    "type": "msg_created"
+                }
+            ],
+            "session": {
+                "contact": {
+                    "created_on": "2000-01-01T00:00:00Z",
+                    "fields": {
+                        "first_name": {
+                            "text": "Ben"
+                        },
+                        "state": {
+                            "state": "Ecuador > Azuay",
+                            "text": "Ecuador > Azuay"
+                        }
+                    },
+                    "id": 1234567,
+                    "language": "eng",
+                    "name": "Ben Haggerty",
+                    "status": "active",
+                    "timezone": "America/Guayaquil",
+                    "urns": [
+                        "tel:+12065551212",
+                        "facebook:1122334455667788",
+                        "mailto:ben@macklemore"
+                    ],
+                    "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+                },
+                "environment": {
+                    "allowed_languages": [
+                        "eng"
+                    ],
+                    "date_format": "YYYY-MM-DD",
+                    "default_language": "eng",
+                    "max_value_length": 640,
+                    "number_format": {
+                        "decimal_symbol": ".",
+                        "digit_grouping_symbol": ","
+                    },
+                    "redaction_policy": "none",
+                    "time_format": "hh:mm",
+                    "timezone": "America/Los_Angeles"
+                },
+                "runs": [
+                    {
+                        "created_on": "2018-07-06T12:30:00.123456789Z",
+                        "events": [
+                            {
+                                "created_on": "2018-07-06T12:30:04.123456789Z",
+                                "msg": {
+                                    "channel": {
+                                        "name": "Android Channel",
+                                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d"
+                                    },
+                                    "text": "Hi Ben Haggerty you were started in this flow by Bob from the 'Parent Flow' flow. He is from Esmeraldas and is aged 33.",
+                                    "urn": "tel:+12065551212",
+                                    "uuid": "c34b6c7d-fa06-4563-92a3-d648ab64bccb"
+                                },
+                                "step_uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094",
+                                "type": "msg_created"
+                            }
+                        ],
+                        "exited_on": "2018-07-06T12:30:06.123456789Z",
+                        "expires_on": "2018-07-06T12:30:01.123456789Z",
+                        "flow": {
+                            "name": "Triggered Flow",
+                            "uuid": "ce902e6f-bc0a-40cf-a58c-1e300d15ec85"
+                        },
+                        "modified_on": "2018-07-06T12:30:06.123456789Z",
+                        "path": [
+                            {
+                                "arrived_on": "2018-07-06T12:30:03.123456789Z",
+                                "exit_uuid": "fa60eef2-9985-46bd-8d58-4d1abf6ae93b",
+                                "node_uuid": "46d51f50-58de-49da-8d13-dadbf322685d",
+                                "uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094"
+                            }
+                        ],
+                        "status": "completed",
+                        "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716"
+                    }
+                ],
+                "status": "completed",
+                "trigger": {
+                    "contact": {
+                        "created_on": "2000-01-01T00:00:00Z",
+                        "fields": {
+                            "first_name": {
+                                "text": "Ben"
+                            },
+                            "state": {
+                                "state": "Ecuador > Azuay",
+                                "text": "Ecuador > Azuay"
+                            }
+                        },
+                        "id": 1234567,
+                        "language": "eng",
+                        "name": "Ben Haggerty",
+                        "status": "active",
+                        "timezone": "America/Guayaquil",
+                        "urns": [
+                            "tel:+12065551212",
+                            "facebook:1122334455667788",
+                            "mailto:ben@macklemore"
+                        ],
+                        "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+                    },
+                    "environment": {
+                        "allowed_languages": [
+                            "eng"
+                        ],
+                        "date_format": "YYYY-MM-DD",
+                        "default_language": "eng",
+                        "max_value_length": 640,
+                        "number_format": {
+                            "decimal_symbol": ".",
+                            "digit_grouping_symbol": ","
+                        },
+                        "redaction_policy": "none",
+                        "time_format": "hh:mm",
+                        "timezone": "America/Los_Angeles"
+                    },
+                    "flow": {
+                        "name": "Registration",
+                        "uuid": "ce902e6f-bc0a-40cf-a58c-1e300d15ec85"
+                    },
+                    "run_summary": {
+                        "contact": {
+                            "created_on": "2018-01-01T12:00:00.000000Z",
+                            "fields": {
+                                "state": {
+                                    "state": "Ecuador > Esmeraldas",
+                                    "text": "Ecuador > Esmeraldas"
+                                }
+                            },
+                            "name": "Bob",
+                            "uuid": "c59b0033-e748-4240-9d4c-e85eb6800151"
+                        },
+                        "flow": {
+                            "name": "Parent Flow",
+                            "uuid": "93c554a1-b90d-4892-b029-a2a87dec9b87"
+                        },
+                        "results": {
+                            "age": {
+                                "created_on": "2000-01-01T00:00:00.000000000-00:00",
+                                "name": "Age",
+                                "node_uuid": "cd2be8c4-59bc-453c-8777-dec9a80043b8",
+                                "value": "33"
+                            }
+                        },
+                        "status": "active",
+                        "uuid": "4213ac47-93fd-48c4-af12-7da8218ef09d"
+                    },
+                    "triggered_on": "2000-01-01T00:00:00Z",
+                    "type": "flow_action"
+                },
+                "type": "messaging",
+                "uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+            }
+        }
+    ],
+    "resumes": [],
+    "trigger": {
+        "contact": {
+            "created_on": "2000-01-01T00:00:00.000000000-00:00",
+            "fields": {
+                "first_name": {
+                    "text": "Ben"
+                },
+                "state": {
+                    "state": "Ecuador > Azuay",
+                    "text": "Ecuador > Azuay"
+                }
+            },
+            "id": 1234567,
+            "language": "eng",
+            "name": "Ben Haggerty",
+            "status": "active",
+            "timezone": "America/Guayaquil",
+            "urns": [
+                "tel:+12065551212",
+                "facebook:1122334455667788",
+                "mailto:ben@macklemore"
+            ],
+            "uuid": "ba96bf7f-bc2a-4873-a7c7-254d1927c4e3"
+        },
+        "environment": {
+            "allowed_languages": [
+                "eng"
+            ],
+            "date_format": "YYYY-MM-DD",
+            "default_language": "eng",
+            "time_format": "hh:mm",
+            "timezone": "America/Los_Angeles"
+        },
+        "flow": {
+            "name": "Registration",
+            "uuid": "ce902e6f-bc0a-40cf-a58c-1e300d15ec85"
+        },
+        "run_summary": {
+            "contact": {
+                "created_on": "2018-01-01T12:00:00.000000Z",
+                "fields": {
+                    "state": {
+                        "state": "Ecuador > Esmeraldas",
+                        "text": "Ecuador > Esmeraldas"
+                    }
+                },
+                "name": "Bob",
+                "uuid": "c59b0033-e748-4240-9d4c-e85eb6800151"
+            },
+            "flow": {
+                "name": "Parent Flow",
+                "uuid": "93c554a1-b90d-4892-b029-a2a87dec9b87"
+            },
+            "results": {
+                "age": {
+                    "created_on": "2000-01-01T00:00:00.000000000-00:00",
+                    "name": "Age",
+                    "node_uuid": "cd2be8c4-59bc-453c-8777-dec9a80043b8",
+                    "value": "33"
+                }
+            },
+            "status": "active",
+            "uuid": "4213ac47-93fd-48c4-af12-7da8218ef09d"
+        },
+        "triggered_on": "2000-01-01T00:00:00.000000000-00:00",
+        "type": "flow_action"
+    }
+}

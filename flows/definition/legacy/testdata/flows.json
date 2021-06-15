@@ -1,0 +1,1013 @@
+[
+    {
+        "legacy": {
+            "metadata": {
+                "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+                "name": "Empty",
+                "revision": 1
+            },
+            "base_language": "eng",
+            "flow_type": "F",
+            "action_sets": [],
+            "rule_sets": []
+        },
+        "expected": {
+            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+            "name": "Empty",
+            "spec_version": "13.0.0",
+            "language": "eng",
+            "type": "messaging",
+            "revision": 1,
+            "expire_after_minutes": 0,
+            "localization": {},
+            "nodes": [],
+            "_ui": {
+                "nodes": {},
+                "stickies": {}
+            }
+        }
+    },
+    {
+        "legacy": {
+            "base_language": "eng",
+            "flow_type": "M"
+        },
+        "expected": {
+            "uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5",
+            "name": "",
+            "spec_version": "13.0.0",
+            "language": "eng",
+            "type": "messaging",
+            "revision": 0,
+            "expire_after_minutes": 0,
+            "localization": {},
+            "nodes": [],
+            "_ui": {
+                "nodes": {},
+                "stickies": {}
+            }
+        }
+    },
+    {
+        "legacy": {
+            "metadata": {
+                "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+                "name": "Simple",
+                "revision": 123,
+                "notes": [
+                    {
+                        "y": 22.3435,
+                        "x": 37,
+                        "body": "This is a note",
+                        "title": "Attention"
+                    }
+                ]
+            },
+            "entry": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+            "base_language": "eng",
+            "flow_type": "M",
+            "action_sets": [
+                {
+                    "y": 1,
+                    "x": 1,
+                    "destination": null,
+                    "uuid": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+                    "exit_uuid": "02e9b42f-62f8-46e5-91c0-a7ef5d1ae314",
+                    "actions": [
+                        {
+                            "msg": {
+                                "eng": "Hello",
+                                "fre": "Bonjour"
+                            },
+                            "media": {},
+                            "send_all": false,
+                            "type": "reply",
+                            "uuid": "98388930-7a0f-4eb8-9a0a-09be2f006420"
+                        }
+                    ]
+                }
+            ],
+            "rule_sets": []
+        },
+        "expected": {
+            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+            "name": "Simple",
+            "spec_version": "13.0.0",
+            "language": "eng",
+            "type": "messaging",
+            "revision": 123,
+            "expire_after_minutes": 0,
+            "localization": {
+                "fre": {
+                    "98388930-7a0f-4eb8-9a0a-09be2f006420": {
+                        "text": [
+                            "Bonjour"
+                        ]
+                    }
+                }
+            },
+            "nodes": [
+                {
+                    "uuid": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+                    "actions": [
+                        {
+                            "type": "send_msg",
+                            "uuid": "98388930-7a0f-4eb8-9a0a-09be2f006420",
+                            "text": "Hello"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "02e9b42f-62f8-46e5-91c0-a7ef5d1ae314"
+                        }
+                    ]
+                }
+            ],
+            "_ui": {
+                "nodes": {
+                    "d51ec25f-04e6-4349-a448-e7c4d93d4597": {
+                        "type": "execute_actions",
+                        "position": {
+                            "left": 1,
+                            "top": 1
+                        }
+                    }
+                },
+                "stickies": {
+                    "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5": {
+                        "body": "This is a note",
+                        "color": "yellow",
+                        "position": {
+                            "left": 37,
+                            "top": 22
+                        },
+                        "title": "Attention"
+                    }
+                }
+            }
+        }
+    },
+    {
+        "legacy": {
+            "metadata": {
+                "uuid": "aaf52597-9485-45fb-9d38-56b2aa548d55",
+                "name": "Node Ordering Test",
+                "revision": 123
+            },
+            "entry": "b2f67f50-0a27-47ba-8b99-9801724c979c",
+            "base_language": "eng",
+            "flow_type": "M",
+            "action_sets": [
+                {
+                    "y": 1000,
+                    "x": 1,
+                    "destination": null,
+                    "uuid": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+                    "exit_uuid": "02e9b42f-62f8-46e5-91c0-a7ef5d1ae314"
+                },
+                {
+                    "y": 500,
+                    "x": 1,
+                    "destination": "90c35d48-7b15-4af0-92eb-1a120b508e89",
+                    "uuid": "397e6a5d-b5ea-4d3a-91fa-de0b0f3efeca",
+                    "exit_uuid": "f8985923-cf3d-4a51-83cb-e15bf70659c1"
+                },
+                {
+                    "y": 750,
+                    "x": 1,
+                    "destination": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+                    "uuid": "90c35d48-7b15-4af0-92eb-1a120b508e89",
+                    "exit_uuid": "9b79240e-753a-4c4a-b414-4f0c83a2ff67"
+                },
+                {
+                    "y": 0,
+                    "x": 1,
+                    "destination": "b2f67f50-0a27-47ba-8b99-9801724c979c",
+                    "uuid": "764bf406-1a5d-43cf-b006-9f6f19595974",
+                    "exit_uuid": "14299c29-2c8e-4c17-8eda-bac4eabf99b6"
+                },
+                {
+                    "y": 250,
+                    "x": 1,
+                    "destination": "397e6a5d-b5ea-4d3a-91fa-de0b0f3efeca",
+                    "uuid": "b2f67f50-0a27-47ba-8b99-9801724c979c",
+                    "exit_uuid": "906b1936-ae34-40b3-bc08-dd62d459adbc"
+                }
+            ]
+        },
+        "expected": {
+            "uuid": "aaf52597-9485-45fb-9d38-56b2aa548d55",
+            "name": "Node Ordering Test",
+            "spec_version": "13.0.0",
+            "language": "eng",
+            "type": "messaging",
+            "revision": 123,
+            "expire_after_minutes": 0,
+            "localization": {},
+            "nodes": [
+                {
+                    "exits": [
+                        {
+                            "destination_uuid": "397e6a5d-b5ea-4d3a-91fa-de0b0f3efeca",
+                            "uuid": "906b1936-ae34-40b3-bc08-dd62d459adbc"
+                        }
+                    ],
+                    "uuid": "b2f67f50-0a27-47ba-8b99-9801724c979c"
+                },
+                {
+                    "exits": [
+                        {
+                            "destination_uuid": "b2f67f50-0a27-47ba-8b99-9801724c979c",
+                            "uuid": "14299c29-2c8e-4c17-8eda-bac4eabf99b6"
+                        }
+                    ],
+                    "uuid": "764bf406-1a5d-43cf-b006-9f6f19595974"
+                },
+                {
+                    "exits": [
+                        {
+                            "destination_uuid": "90c35d48-7b15-4af0-92eb-1a120b508e89",
+                            "uuid": "f8985923-cf3d-4a51-83cb-e15bf70659c1"
+                        }
+                    ],
+                    "uuid": "397e6a5d-b5ea-4d3a-91fa-de0b0f3efeca"
+                },
+                {
+                    "exits": [
+                        {
+                            "destination_uuid": "d51ec25f-04e6-4349-a448-e7c4d93d4597",
+                            "uuid": "9b79240e-753a-4c4a-b414-4f0c83a2ff67"
+                        }
+                    ],
+                    "uuid": "90c35d48-7b15-4af0-92eb-1a120b508e89"
+                },
+                {
+                    "exits": [
+                        {
+                            "uuid": "02e9b42f-62f8-46e5-91c0-a7ef5d1ae314"
+                        }
+                    ],
+                    "uuid": "d51ec25f-04e6-4349-a448-e7c4d93d4597"
+                }
+            ],
+            "_ui": {
+                "nodes": {
+                    "397e6a5d-b5ea-4d3a-91fa-de0b0f3efeca": {
+                        "position": {
+                            "left": 1,
+                            "top": 500
+                        },
+                        "type": "execute_actions"
+                    },
+                    "764bf406-1a5d-43cf-b006-9f6f19595974": {
+                        "position": {
+                            "left": 1,
+                            "top": 0
+                        },
+                        "type": "execute_actions"
+                    },
+                    "90c35d48-7b15-4af0-92eb-1a120b508e89": {
+                        "position": {
+                            "left": 1,
+                            "top": 750
+                        },
+                        "type": "execute_actions"
+                    },
+                    "b2f67f50-0a27-47ba-8b99-9801724c979c": {
+                        "position": {
+                            "left": 1,
+                            "top": 250
+                        },
+                        "type": "execute_actions"
+                    },
+                    "d51ec25f-04e6-4349-a448-e7c4d93d4597": {
+                        "position": {
+                            "left": 1,
+                            "top": 1000
+                        },
+                        "type": "execute_actions"
+                    }
+                },
+                "stickies": {}
+            }
+        }
+    },
+    {
+        "legacy": {
+            "rule_sets": [
+                {
+                    "y": 106,
+                    "x": 100,
+                    "rules": [
+                        {
+                            "test": {
+                                "max": "10",
+                                "type": "between",
+                                "min": "1"
+                            },
+                            "destination": "9e82371e-94f6-41cf-8a97-82aedc1ccadd",
+                            "uuid": "a66f3bfc-7a68-4925-a07b-a31cbc1b207a",
+                            "category": {
+                                "base": "1-10"
+                            }
+                        },
+                        {
+                            "test": {
+                                "test": "true",
+                                "type": "true"
+                            },
+                            "category": {
+                                "base": "Other"
+                            },
+                            "destination": null,
+                            "uuid": "ee85d3a5-75af-4809-94b9-661c2e731c2a"
+                        }
+                    ],
+                    "uuid": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82",
+                    "label": "number",
+                    "ruleset_type": "wait_message"
+                },
+                {
+                    "y": 300,
+                    "x": 300,
+                    "rules": [
+                        {
+                            "test": {
+                                "test": "true",
+                                "type": "true"
+                            },
+                            "category": {
+                                "base": "All Responses"
+                            },
+                            "destination": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82",
+                            "uuid": "358ebed8-8cf2-455d-b60f-f882d71c6ed6"
+                        }
+                    ],
+                    "uuid": "fd9c4b9e-48d2-45b5-84af-ffb102672710",
+                    "label": "passive",
+                    "operand": "@contact.name",
+                    "ruleset_type": "contact_field"
+                }
+            ],
+            "action_sets": [
+                {
+                    "y": 0,
+                    "x": 100,
+                    "destination": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82",
+                    "uuid": "029c3266-39c1-4850-9d71-7e008dae2e65",
+                    "actions": [
+                        {
+                            "msg": {
+                                "base": "Pick a number between 1-10."
+                            },
+                            "type": "reply",
+                            "uuid": "623c784f-5277-4dbc-9568-f7984dbc5c7b"
+                        }
+                    ],
+                    "exit_uuid": "21eab42d-8cfd-4e1f-a4a0-cb7d069bc366"
+                },
+                {
+                    "y": 228,
+                    "x": 118,
+                    "destination": null,
+                    "uuid": "9e82371e-94f6-41cf-8a97-82aedc1ccadd",
+                    "actions": [
+                        {
+                            "msg": {
+                                "base": "You picked @flow.number!"
+                            },
+                            "type": "reply",
+                            "uuid": "988b0715-a553-435a-bc05-76389570b70b"
+                        }
+                    ],
+                    "exit_uuid": "f659aa9f-492e-4872-82ce-e752719c3559"
+                }
+            ],
+            "base_language": "base",
+            "flow_type": "F",
+            "metadata": {
+                "uuid": "40730a2d-edaa-4ff0-9d2f-81ca2131ddfe",
+                "saved_on": null,
+                "name": "Pick a Number"
+            },
+            "version": "11.11"
+        },
+        "expected": {
+            "_ui": {
+                "nodes": {
+                    "029c3266-39c1-4850-9d71-7e008dae2e65": {
+                        "position": {
+                            "left": 100,
+                            "top": 0
+                        },
+                        "type": "execute_actions"
+                    },
+                    "80f2ae0b-492b-4bb1-9628-fb3dc191ab82": {
+                        "position": {
+                            "left": 100,
+                            "top": 106
+                        },
+                        "type": "wait_for_response"
+                    },
+                    "9e82371e-94f6-41cf-8a97-82aedc1ccadd": {
+                        "position": {
+                            "left": 118,
+                            "top": 228
+                        },
+                        "type": "execute_actions"
+                    },
+                    "fd9c4b9e-48d2-45b5-84af-ffb102672710": {
+                        "config": {
+                            "operand": {
+                                "id": "name",
+                                "name": "Name",
+                                "type": "property"
+                            }
+                        },
+                        "position": {
+                            "left": 300,
+                            "top": 300
+                        },
+                        "type": "split_by_contact_field"
+                    }
+                },
+                "stickies": {}
+            },
+            "expire_after_minutes": 0,
+            "language": "base",
+            "localization": {},
+            "name": "Pick a Number",
+            "nodes": [
+                {
+                    "actions": [
+                        {
+                            "text": "Pick a number between 1-10.",
+                            "type": "send_msg",
+                            "uuid": "623c784f-5277-4dbc-9568-f7984dbc5c7b"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "destination_uuid": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82",
+                            "uuid": "21eab42d-8cfd-4e1f-a4a0-cb7d069bc366"
+                        }
+                    ],
+                    "uuid": "029c3266-39c1-4850-9d71-7e008dae2e65"
+                },
+                {
+                    "uuid": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82",
+                    "router": {
+                        "type": "switch",
+                        "wait": {
+                            "type": "msg"
+                        },
+                        "result_name": "number",
+                        "categories": [
+                            {
+                                "exit_uuid": "a66f3bfc-7a68-4925-a07b-a31cbc1b207a",
+                                "name": "1-10",
+                                "uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+                            },
+                            {
+                                "exit_uuid": "ee85d3a5-75af-4809-94b9-661c2e731c2a",
+                                "name": "Other",
+                                "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716"
+                            }
+                        ],
+                        "operand": "@input",
+                        "cases": [
+                            {
+                                "arguments": [
+                                    "1",
+                                    "10"
+                                ],
+                                "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5",
+                                "type": "has_number_between",
+                                "uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094"
+                            }
+                        ],
+                        "default_category_uuid": "692926ea-09d6-4942-bd38-d266ec8d3716"
+                    },
+                    "exits": [
+                        {
+                            "uuid": "a66f3bfc-7a68-4925-a07b-a31cbc1b207a",
+                            "destination_uuid": "9e82371e-94f6-41cf-8a97-82aedc1ccadd"
+                        },
+                        {
+                            "uuid": "ee85d3a5-75af-4809-94b9-661c2e731c2a"
+                        }
+                    ]
+                },
+                {
+                    "actions": [
+                        {
+                            "text": "You picked @results.number!",
+                            "type": "send_msg",
+                            "uuid": "988b0715-a553-435a-bc05-76389570b70b"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "f659aa9f-492e-4872-82ce-e752719c3559"
+                        }
+                    ],
+                    "uuid": "9e82371e-94f6-41cf-8a97-82aedc1ccadd"
+                },
+                {
+                    "uuid": "fd9c4b9e-48d2-45b5-84af-ffb102672710",
+                    "router": {
+                        "type": "switch",
+                        "result_name": "passive",
+                        "categories": [
+                            {
+                                "exit_uuid": "358ebed8-8cf2-455d-b60f-f882d71c6ed6",
+                                "name": "All Responses",
+                                "uuid": "c34b6c7d-fa06-4563-92a3-d648ab64bccb"
+                            }
+                        ],
+                        "operand": "@contact.name",
+                        "cases": [],
+                        "default_category_uuid": "c34b6c7d-fa06-4563-92a3-d648ab64bccb"
+                    },
+                    "exits": [
+                        {
+                            "uuid": "358ebed8-8cf2-455d-b60f-f882d71c6ed6",
+                            "destination_uuid": "80f2ae0b-492b-4bb1-9628-fb3dc191ab82"
+                        }
+                    ]
+                }
+            ],
+            "revision": 0,
+            "spec_version": "13.0.0",
+            "type": "messaging",
+            "uuid": "40730a2d-edaa-4ff0-9d2f-81ca2131ddfe"
+        }
+    },
+    {
+        "description": "old single message campaign event flow",
+        "legacy": {
+            "version": "11.12",
+            "entry": "59329bcc-393e-4b36-af14-27b4c9454d0c",
+            "base_language": "fra",
+            "rule_sets": [],
+            "action_sets": [
+                {
+                    "x": 100,
+                    "y": 0,
+                    "uuid": "59329bcc-393e-4b36-af14-27b4c9454d0c",
+                    "exit_uuid": "fe6d02da-7984-4027-b1b5-7b0cbfbb1cc9",
+                    "actions": [
+                        {
+                            "type": "reply",
+                            "uuid": "e3c3de21-8d7c-4d46-827f-3b2a917671ea",
+                            "msg": {
+                                "fra": "Bonsoir cher parent, veuillez envoyer votre enfant dans un centre de sante demain pour la prise du Rota"
+                            },
+                            "media": {},
+                            "quick_replies": [],
+                            "send_all": false
+                        }
+                    ]
+                }
+            ],
+            "metadata": {
+                "revision": 1
+            },
+            "name": "Single Message (24012)",
+            "uuid": "2306967b-0904-4c56-b071-2acf3480d20f",
+            "revision": 1,
+            "expire_after_minutes": 720
+        },
+        "expected": {
+            "uuid": "2306967b-0904-4c56-b071-2acf3480d20f",
+            "name": "Single Message (24012)",
+            "revision": 1,
+            "spec_version": "13.0.0",
+            "type": "messaging",
+            "expire_after_minutes": 0,
+            "language": "fra",
+            "localization": {},
+            "nodes": [
+                {
+                    "actions": [
+                        {
+                            "text": "Bonsoir cher parent, veuillez envoyer votre enfant dans un centre de sante demain pour la prise du Rota",
+                            "type": "send_msg",
+                            "uuid": "e3c3de21-8d7c-4d46-827f-3b2a917671ea"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "fe6d02da-7984-4027-b1b5-7b0cbfbb1cc9"
+                        }
+                    ],
+                    "uuid": "59329bcc-393e-4b36-af14-27b4c9454d0c"
+                }
+            ],
+            "_ui": {
+                "nodes": {
+                    "59329bcc-393e-4b36-af14-27b4c9454d0c": {
+                        "position": {
+                            "left": 100,
+                            "top": 0
+                        },
+                        "type": "execute_actions"
+                    }
+                },
+                "stickies": {}
+            }
+        }
+    },
+    {
+        "description": "legacy flow invalid destinations which should be ignored",
+        "legacy": {
+            "entry": "2810264e-ff2a-4298-a190-77ee715b0b44",
+            "action_sets": [
+                {
+                    "uuid": "55fc8cba-d3a1-426b-9e2a-2e94325e9fab",
+                    "x": 86,
+                    "y": 128,
+                    "destination": "01ba6317-9ddd-4196-bfa7-0ab0434effcc",
+                    "actions": [
+                        {
+                            "type": "reply",
+                            "uuid": "f81e5531-c923-4c83-943d-8bd3bd9e218d",
+                            "msg": {
+                                "eng": "You said yes"
+                            },
+                            "media": {},
+                            "quick_replies": [],
+                            "send_all": false
+                        }
+                    ],
+                    "exit_uuid": "6adefcb5-f369-458e-b99d-60ca9c96a939"
+                }
+            ],
+            "rule_sets": [
+                {
+                    "uuid": "2810264e-ff2a-4298-a190-77ee715b0b44",
+                    "x": 100,
+                    "y": 0,
+                    "label": "Response 1",
+                    "rules": [
+                        {
+                            "uuid": "6bbe46af-f8bb-4241-b25e-f53a314fd0d4",
+                            "category": {
+                                "eng": "Yes"
+                            },
+                            "destination": "55fc8cba-d3a1-426b-9e2a-2e94325e9fab",
+                            "destination_type": "A",
+                            "test": {
+                                "type": "contains_any",
+                                "test": {
+                                    "eng": "yes"
+                                }
+                            },
+                            "label": null
+                        },
+                        {
+                            "uuid": "45e631cc-b409-47e0-a94b-2891e1397926",
+                            "category": {
+                                "eng": "No"
+                            },
+                            "destination": "cd699797-1a04-4143-9a58-a7f1dcbc285e",
+                            "destination_type": "A",
+                            "test": {
+                                "type": "contains_any",
+                                "test": {
+                                    "eng": "No"
+                                }
+                            },
+                            "label": null
+                        },
+                        {
+                            "uuid": "97a39597-fa5d-4ee4-a7bc-0aa18e56f1ec",
+                            "category": {
+                                "eng": "Other"
+                            },
+                            "destination": null,
+                            "destination_type": null,
+                            "test": {
+                                "type": "true"
+                            },
+                            "label": null
+                        }
+                    ],
+                    "finished_key": null,
+                    "ruleset_type": "wait_message",
+                    "response_type": "",
+                    "operand": "@step.value",
+                    "config": {}
+                }
+            ],
+            "base_language": "eng",
+            "flow_type": "M",
+            "version": "11.12",
+            "metadata": {
+                "uuid": "2ff042be-2563-431d-9c6c-567bf071b8c7",
+                "name": "Bad Destinations",
+                "saved_on": "2019-05-27T18:51:37.370652Z",
+                "revision": 4,
+                "expires": 10080
+            }
+        },
+        "expected": {
+            "_ui": {
+                "nodes": {
+                    "2810264e-ff2a-4298-a190-77ee715b0b44": {
+                        "position": {
+                            "left": 100,
+                            "top": 0
+                        },
+                        "type": "wait_for_response"
+                    },
+                    "55fc8cba-d3a1-426b-9e2a-2e94325e9fab": {
+                        "position": {
+                            "left": 86,
+                            "top": 128
+                        },
+                        "type": "execute_actions"
+                    }
+                },
+                "stickies": {}
+            },
+            "expire_after_minutes": 10080,
+            "language": "eng",
+            "localization": {},
+            "name": "Bad Destinations",
+            "nodes": [
+                {
+                    "exits": [
+                        {
+                            "destination_uuid": "55fc8cba-d3a1-426b-9e2a-2e94325e9fab",
+                            "uuid": "6bbe46af-f8bb-4241-b25e-f53a314fd0d4"
+                        },
+                        {
+                            "uuid": "45e631cc-b409-47e0-a94b-2891e1397926"
+                        },
+                        {
+                            "uuid": "97a39597-fa5d-4ee4-a7bc-0aa18e56f1ec"
+                        }
+                    ],
+                    "router": {
+                        "cases": [
+                            {
+                                "arguments": [
+                                    "yes"
+                                ],
+                                "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5",
+                                "type": "has_any_word",
+                                "uuid": "c34b6c7d-fa06-4563-92a3-d648ab64bccb"
+                            },
+                            {
+                                "arguments": [
+                                    "No"
+                                ],
+                                "category_uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+                                "type": "has_any_word",
+                                "uuid": "5802813d-6c58-4292-8228-9728778b6c98"
+                            }
+                        ],
+                        "categories": [
+                            {
+                                "exit_uuid": "6bbe46af-f8bb-4241-b25e-f53a314fd0d4",
+                                "name": "Yes",
+                                "uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+                            },
+                            {
+                                "exit_uuid": "45e631cc-b409-47e0-a94b-2891e1397926",
+                                "name": "No",
+                                "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716"
+                            },
+                            {
+                                "exit_uuid": "97a39597-fa5d-4ee4-a7bc-0aa18e56f1ec",
+                                "name": "Other",
+                                "uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094"
+                            }
+                        ],
+                        "default_category_uuid": "8720f157-ca1c-432f-9c0b-2014ddc77094",
+                        "operand": "@input",
+                        "result_name": "Response 1",
+                        "type": "switch",
+                        "wait": {
+                            "type": "msg"
+                        }
+                    },
+                    "uuid": "2810264e-ff2a-4298-a190-77ee715b0b44"
+                },
+                {
+                    "actions": [
+                        {
+                            "text": "You said yes",
+                            "type": "send_msg",
+                            "uuid": "f81e5531-c923-4c83-943d-8bd3bd9e218d"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "6adefcb5-f369-458e-b99d-60ca9c96a939"
+                        }
+                    ],
+                    "uuid": "55fc8cba-d3a1-426b-9e2a-2e94325e9fab"
+                }
+            ],
+            "revision": 4,
+            "spec_version": "13.0.0",
+            "type": "messaging",
+            "uuid": "2ff042be-2563-431d-9c6c-567bf071b8c7"
+        }
+    },
+    {
+        "description": "multiple languages with base as default",
+        "legacy": {
+            "version": "11.12",
+            "entry": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39",
+            "base_language": "base",
+            "rule_sets": [],
+            "action_sets": [
+                {
+                    "x": 100,
+                    "y": 0,
+                    "uuid": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39",
+                    "exit_uuid": "2ddd0916-06bc-4d59-983d-c17754d3f32a",
+                    "actions": [
+                        {
+                            "type": "reply",
+                            "uuid": "cf86e381-438a-434b-98d6-b77e23c7a094",
+                            "msg": {
+                                "fra": "Bonjour",
+                                "eng": "Hello",
+                                "spa": "Hola",
+                                "base": "G'day"
+                            },
+                            "media": {},
+                            "quick_replies": [],
+                            "send_all": false
+                        }
+                    ]
+                }
+            ],
+            "metadata": {
+                "revision": 1
+            },
+            "name": "Languages Test",
+            "uuid": "15dcd6a8-ed5c-4282-a857-53c4a52de20e",
+            "revision": 1,
+            "expire_after_minutes": 720
+        },
+        "expected": {
+            "uuid": "15dcd6a8-ed5c-4282-a857-53c4a52de20e",
+            "name": "Languages Test",
+            "revision": 1,
+            "spec_version": "13.0.0",
+            "type": "messaging",
+            "expire_after_minutes": 0,
+            "language": "base",
+            "localization": {
+                "eng": {
+                    "cf86e381-438a-434b-98d6-b77e23c7a094": {
+                        "text": [
+                            "Hello"
+                        ]
+                    }
+                },
+                "fra": {
+                    "cf86e381-438a-434b-98d6-b77e23c7a094": {
+                        "text": [
+                            "Bonjour"
+                        ]
+                    }
+                },
+                "spa": {
+                    "cf86e381-438a-434b-98d6-b77e23c7a094": {
+                        "text": [
+                            "Hola"
+                        ]
+                    }
+                }
+            },
+            "nodes": [
+                {
+                    "actions": [
+                        {
+                            "text": "G'day",
+                            "type": "send_msg",
+                            "uuid": "cf86e381-438a-434b-98d6-b77e23c7a094"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "2ddd0916-06bc-4d59-983d-c17754d3f32a"
+                        }
+                    ],
+                    "uuid": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39"
+                }
+            ],
+            "_ui": {
+                "nodes": {
+                    "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39": {
+                        "position": {
+                            "left": 100,
+                            "top": 0
+                        },
+                        "type": "execute_actions"
+                    }
+                },
+                "stickies": {}
+            }
+        }
+    },
+    {
+        "description": "multiple languages with base translations which can be ignored",
+        "legacy": {
+            "version": "11.12",
+            "entry": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39",
+            "base_language": "spa",
+            "rule_sets": [],
+            "action_sets": [
+                {
+                    "x": 100,
+                    "y": 0,
+                    "uuid": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39",
+                    "exit_uuid": "2ddd0916-06bc-4d59-983d-c17754d3f32a",
+                    "actions": [
+                        {
+                            "type": "reply",
+                            "uuid": "cf86e381-438a-434b-98d6-b77e23c7a094",
+                            "msg": {
+                                "fra": "Bonjour",
+                                "eng": "Hello",
+                                "spa": "Hola",
+                                "base": "G'day"
+                            },
+                            "media": {},
+                            "quick_replies": [],
+                            "send_all": false
+                        }
+                    ]
+                }
+            ],
+            "metadata": {
+                "revision": 1
+            },
+            "name": "Languages Test",
+            "uuid": "15dcd6a8-ed5c-4282-a857-53c4a52de20e",
+            "revision": 1,
+            "expire_after_minutes": 720
+        },
+        "expected": {
+            "uuid": "15dcd6a8-ed5c-4282-a857-53c4a52de20e",
+            "name": "Languages Test",
+            "revision": 1,
+            "spec_version": "13.0.0",
+            "type": "messaging",
+            "expire_after_minutes": 0,
+            "language": "spa",
+            "localization": {
+                "eng": {
+                    "cf86e381-438a-434b-98d6-b77e23c7a094": {
+                        "text": [
+                            "Hello"
+                        ]
+                    }
+                },
+                "fra": {
+                    "cf86e381-438a-434b-98d6-b77e23c7a094": {
+                        "text": [
+                            "Bonjour"
+                        ]
+                    }
+                }
+            },
+            "nodes": [
+                {
+                    "actions": [
+                        {
+                            "text": "Hola",
+                            "type": "send_msg",
+                            "uuid": "cf86e381-438a-434b-98d6-b77e23c7a094"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "2ddd0916-06bc-4d59-983d-c17754d3f32a"
+                        }
+                    ],
+                    "uuid": "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39"
+                }
+            ],
+            "_ui": {
+                "nodes": {
+                    "7ec73b66-cfc8-4a6d-8e62-102eb1cd0a39": {
+                        "position": {
+                            "left": 100,
+                            "top": 0
+                        },
+                        "type": "execute_actions"
+                    }
+                },
+                "stickies": {}
+            }
+        }
+    }
+]
