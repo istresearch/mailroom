@@ -1,0 +1,243 @@
+[
+    {
+        "description": "Error events if body, subject or addresses contain expression errors",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com@(1 / 0)"
+            ],
+            "subject": "Hi there@(1 / 0)",
+            "body": "So I was thinking...@(1 / 0)"
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "email_sent",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "to": [
+                    "bob@example.com"
+                ],
+                "subject": "Hi there",
+                "body": "So I was thinking..."
+            }
+        ],
+        "templates": [
+            "bob@example.com@(1 / 0)",
+            "Hi there@(1 / 0)",
+            "So I was thinking...@(1 / 0)"
+        ],
+        "localizables": [
+            "Hi there@(1 / 0)",
+            "So I was thinking...@(1 / 0)"
+        ],
+        "inspection": {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Error event and action skipped if subject evaluates to empty",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com"
+            ],
+            "subject": "@(\"\")",
+            "body": "So I was thinking..."
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "email subject evaluated to empty string, skipping"
+            }
+        ]
+    },
+    {
+        "description": "New lines and tabs in subject removed",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com"
+            ],
+            "subject": "\nHi\tthere  \n   Bob",
+            "body": "So I was thinking..."
+        },
+        "events": [
+            {
+                "type": "email_sent",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "to": [
+                    "bob@example.com"
+                ],
+                "subject": "Hi there Bob",
+                "body": "So I was thinking..."
+            }
+        ]
+    },
+    {
+        "description": "Error event and action skipped if body evaluates to empty",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com"
+            ],
+            "subject": "Hi there",
+            "body": "@(\"\")"
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "email body evaluated to empty string, skipping"
+            }
+        ]
+    },
+    {
+        "description": "Error event and address ignored if it evaluates to empty",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "@(\"\")"
+            ],
+            "subject": "Hi there",
+            "body": "So I was thinking..."
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "email address evaluated to empty string, skipping"
+            }
+        ]
+    },
+    {
+        "description": "Mailto prefixes stripped from addresses",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "mailto:bob@example.com"
+            ],
+            "subject": "Hi there",
+            "body": "So I was thinking..."
+        },
+        "events": [
+            {
+                "type": "email_sent",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "to": [
+                    "bob@example.com"
+                ],
+                "subject": "Hi there",
+                "body": "So I was thinking..."
+            }
+        ]
+    },
+    {
+        "description": "Subject and body can be localized",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com"
+            ],
+            "subject": "Hi there",
+            "body": "So I was thinking..."
+        },
+        "localization": {
+            "spa": {
+                "ad154980-7bf7-4ab8-8728-545fd6378912": {
+                    "subject": [
+                        "Hola"
+                    ],
+                    "body": [
+                        "Pues estuve pensando..."
+                    ]
+                }
+            }
+        },
+        "events": [
+            {
+                "type": "email_sent",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "to": [
+                    "bob@example.com"
+                ],
+                "subject": "Hola",
+                "body": "Pues estuve pensando..."
+            }
+        ],
+        "templates": [
+            "bob@example.com",
+            "Hi there",
+            "Hola",
+            "So I was thinking...",
+            "Pues estuve pensando..."
+        ],
+        "localizables": [
+            "Hi there",
+            "So I was thinking..."
+        ],
+        "inspection": {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Error event if sending fails",
+        "smtp_error": "oops can't send",
+        "action": {
+            "type": "send_email",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "addresses": [
+                "bob@example.com"
+            ],
+            "subject": "Hi there",
+            "body": "So I was thinking..."
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "unable to send email: oops can't send"
+            }
+        ]
+    }
+]

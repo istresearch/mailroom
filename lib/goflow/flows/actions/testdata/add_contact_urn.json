@@ -1,0 +1,182 @@
+[
+    {
+        "description": "Error event if session has no contact",
+        "no_contact": true,
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "tel",
+            "path": "+1234567890"
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "can't execute action in session without a contact"
+            }
+        ],
+        "templates": [
+            "+1234567890"
+        ],
+        "inspection": {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Error event if path evaluates to empty",
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "mailto",
+            "path": "@(\"\")"
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "can't add URN with empty path"
+            }
+        ]
+    },
+    {
+        "description": "Error event if path has expression error",
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "mailto",
+            "path": "bob@nyaruka.com@(1 / 0)"
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "twitterid:54784326227#nyaruka",
+                    "mailto:bob@nyaruka.com"
+                ]
+            }
+        ]
+    },
+    {
+        "description": "NOOP if URN already exists on contact",
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "tel",
+            "path": "12065551212"
+        },
+        "events": []
+    },
+    {
+        "description": "URNs changed event if URN added",
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "mailto",
+            "path": "bob@nyaruka.com"
+        },
+        "events": [
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "twitterid:54784326227#nyaruka",
+                    "mailto:bob@nyaruka.com"
+                ]
+            }
+        ],
+        "contact_after": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Ryan Lewis",
+            "language": "eng",
+            "status": "active",
+            "timezone": "America/Guayaquil",
+            "created_on": "2018-06-20T11:40:30.123456789Z",
+            "urns": [
+                "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                "twitterid:54784326227#nyaruka",
+                "mailto:bob@nyaruka.com"
+            ],
+            "groups": [
+                {
+                    "uuid": "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d",
+                    "name": "Testers"
+                },
+                {
+                    "uuid": "0ec97956-c451-48a0-a180-1ce766623e31",
+                    "name": "Males"
+                }
+            ],
+            "fields": {
+                "gender": {
+                    "text": "Male"
+                }
+            }
+        }
+    },
+    {
+        "description": "URN normalized before being added to contact",
+        "action": {
+            "type": "add_contact_urn",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "scheme": "tel",
+            "path": " 12044443333 "
+        },
+        "events": [
+            {
+                "type": "contact_urns_changed",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "urns": [
+                    "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "twitterid:54784326227#nyaruka",
+                    "tel:+12044443333"
+                ]
+            }
+        ],
+        "contact_after": {
+            "uuid": "5d76d86b-3bb9-4d5a-b822-c9d86f5d8e4f",
+            "name": "Ryan Lewis",
+            "language": "eng",
+            "status": "active",
+            "timezone": "America/Guayaquil",
+            "created_on": "2018-06-20T11:40:30.123456789Z",
+            "urns": [
+                "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                "twitterid:54784326227#nyaruka",
+                "tel:+12044443333"
+            ],
+            "groups": [
+                {
+                    "uuid": "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d",
+                    "name": "Testers"
+                },
+                {
+                    "uuid": "0ec97956-c451-48a0-a180-1ce766623e31",
+                    "name": "Males"
+                }
+            ],
+            "fields": {
+                "gender": {
+                    "text": "Male"
+                }
+            }
+        }
+    }
+]

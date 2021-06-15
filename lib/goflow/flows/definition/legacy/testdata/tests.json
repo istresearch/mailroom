@@ -1,0 +1,559 @@
+[
+    {
+        "legacy_test": {
+            "type": "between",
+            "min": "@contact.age",
+            "max": "34"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_between",
+            "arguments": [
+                "@fields.age",
+                "34"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "contains",
+            "test": {
+                "eng": "yes yeah y'up @contact.affirmative",
+                "fra": "oui @contact.affirmative"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_all_words",
+            "arguments": [
+                "yes yeah y'up @fields.affirmative"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "oui @fields.affirmative"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "contains_any",
+            "test": {
+                "eng": "yes yeah",
+                "fra": "oui"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_any_word",
+            "arguments": [
+                "yes yeah"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "oui"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "contains_any",
+            "test": "oops not a dict"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_any_word",
+            "arguments": [
+                "oops not a dict"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "contains_only_phrase",
+            "test": {
+                "eng": "yes yeah",
+                "fra": "oui"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_only_phrase",
+            "arguments": [
+                "yes yeah"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "oui"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "contains_phrase",
+            "test": {
+                "eng": "yes yeah",
+                "fra": "oui"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_phrase",
+            "arguments": [
+                "yes yeah"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "oui"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "date"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "date_after",
+            "test": "27-7-2017"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_gt",
+            "arguments": [
+                "27-7-2017"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "date_after",
+            "test": "@date.yesterday"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_gt",
+            "arguments": [
+                "@(datetime_add(now(), -1, \"D\"))"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "date_after",
+            "test": "@(date.today + 10)"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_gt",
+            "arguments": [
+                "@(datetime_add(today(), 10, \"D\"))"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {},
+        "expected_ui": {
+            "arguments": [
+                "10"
+            ]
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "date_after",
+            "test": "@(date.today + -10)"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_gt",
+            "arguments": [
+                "@(datetime_add(today(), -10, \"D\"))"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {},
+        "expected_ui": {
+            "arguments": [
+                "-10"
+            ]
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "date_before",
+            "test": "27-7-2017"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_lt",
+            "arguments": [
+                "27-7-2017"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "date_equal",
+            "test": "27-7-2017"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_date_eq",
+            "arguments": [
+                "27-7-2017"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "district",
+            "test": "@flow.state"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_district",
+            "arguments": [
+                "@results.state"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "has_email"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_email",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "eq",
+            "test": "@contact.age"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_eq",
+            "arguments": [
+                "@fields.age"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "gt",
+            "test": "@contact.age"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_gt",
+            "arguments": [
+                "@fields.age"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "gte",
+            "test": "@contact.age"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_gte",
+            "arguments": [
+                "@fields.age"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "in_group",
+            "test": {
+                "uuid": "e9963476-1751-4078-9cc8-32a01283751a",
+                "name": "Beta"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_group",
+            "arguments": [
+                "e9963476-1751-4078-9cc8-32a01283751a",
+                "Beta"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "lt",
+            "test": "@contact.age"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_lt",
+            "arguments": [
+                "@fields.age"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "lte",
+            "test": "@contact.age"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number_lte",
+            "arguments": [
+                "@fields.age"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "not_empty"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_text",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "number"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_number",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "phone"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_phone",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "regex",
+            "test": {
+                "eng": "[Yy]eah? \\w",
+                "fra": "[Oo]ui"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_pattern",
+            "arguments": [
+                "[Yy]eah? \\w"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "[Oo]ui"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "starts",
+            "test": {
+                "eng": "yes",
+                "fra": "oui"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_beginning",
+            "arguments": [
+                "yes"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {
+            "fra": {
+                "692926ea-09d6-4942-bd38-d266ec8d3716": {
+                    "arguments": [
+                        "oui"
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "legacy_test": {
+            "type": "state"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_state",
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "subflow",
+            "exit_type": "completed"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_only_text",
+            "arguments": [
+                "completed"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "subflow",
+            "exit_type": "expired"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_only_text",
+            "arguments": [
+                "expired"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "ward",
+            "state": "@flow.state",
+            "district": "@flow.district"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_ward",
+            "arguments": [
+                "@results.district",
+                "@results.state"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "webhook_status",
+            "status": "success"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_only_text",
+            "arguments": [
+                "Success"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "webhook_status",
+            "status": "failure"
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_only_text",
+            "arguments": [
+                "Failure"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    },
+    {
+        "legacy_test": {
+            "type": "contains_any",
+            "test": {
+                "eng": "@(legacy.expression.with.error.)"
+            }
+        },
+        "expected_case": {
+            "uuid": "692926ea-09d6-4942-bd38-d266ec8d3716",
+            "type": "has_any_word",
+            "arguments": [
+                "@(legacy.expression.with.error.)"
+            ],
+            "category_uuid": "d2f852ec-7b4e-457f-ae7f-f8b243c49ff5"
+        },
+        "expected_localization": {}
+    }
+]

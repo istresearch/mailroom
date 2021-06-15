@@ -1,0 +1,256 @@
+{
+    "flows": [
+        {
+            "uuid": "bead76f5-dac4-4c9d-996c-c62b326e8c0a",
+            "name": "Action Tester",
+            "spec_version": "13.2",
+            "language": "eng",
+            "type": "messaging",
+            "revision": 123,
+            "localization": {},
+            "nodes": [
+                {
+                    "uuid": "72a1f5df-49f9-45df-94c9-d86f7ea064e5",
+                    "actions": [],
+                    "exits": [
+                        {
+                            "uuid": "d7a36118-0a38-4b35-a7e4-ae89042f0d3c"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "uuid": "7a84463d-d209-4d3e-a0ff-79f977cd7bd0",
+            "name": "Voice Action Tester",
+            "spec_version": "13.2",
+            "language": "eng",
+            "type": "voice",
+            "revision": 123,
+            "localization": {},
+            "nodes": [
+                {
+                    "uuid": "6cc35e54-fd49-4ae7-af6e-47facd95f3da",
+                    "actions": [],
+                    "exits": [
+                        {
+                            "uuid": "d7a36118-0a38-4b35-a7e4-ae89042f0d3c"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "uuid": "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d",
+            "name": "Collect Age",
+            "spec_version": "13.2",
+            "language": "eng",
+            "type": "messaging",
+            "nodes": [
+                {
+                    "uuid": "d9dba561-b5ee-4f62-ba44-60c4dc242b84",
+                    "actions": [
+                        {
+                            "uuid": "4ed673b3-bdcc-40f2-944b-6ad1c82eb3ee",
+                            "type": "set_run_result",
+                            "name": "Age",
+                            "value": "23",
+                            "category": "Youth"
+                        },
+                        {
+                            "uuid": "7a0c3cec-ef84-41aa-bf2b-be8259038683",
+                            "type": "set_contact_field",
+                            "field": {
+                                "key": "age",
+                                "name": "Age"
+                            },
+                            "value": "@results.age.value"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "4ee148c8-4026-41da-9d4c-08cb4d60b0d7"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "channels": [
+        {
+            "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+            "name": "My Android Phone",
+            "address": "+17036975131",
+            "schemes": [
+                "tel"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ],
+            "country": "US"
+        },
+        {
+            "uuid": "3a05eaf5-cb1b-4246-bef1-f277419c83a7",
+            "name": "Nexmo",
+            "address": "+16055742523",
+            "schemes": [
+                "tel"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ]
+        },
+        {
+            "uuid": "8e21f093-99aa-413b-b55b-758b54308fcb",
+            "name": "Twitter Channel",
+            "address": "nyaruka",
+            "schemes": [
+                "twitterid"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ]
+        }
+    ],
+    "classifiers": [
+        {
+            "uuid": "1c06c884-39dd-4ce4-ad9f-9a01cbe6c000",
+            "name": "Booking",
+            "type": "wit",
+            "intents": [
+                "book_flight",
+                "book_hotel"
+            ]
+        }
+    ],
+    "fields": [
+        {
+            "uuid": "d66a7823-eada-40e5-9a3a-57239d4690bf",
+            "key": "gender",
+            "name": "Gender",
+            "type": "text"
+        },
+        {
+            "uuid": "f1b5aea6-6586-41c7-9020-1a6326cc6565",
+            "key": "age",
+            "name": "Age",
+            "type": "number"
+        }
+    ],
+    "globals": [
+        {
+            "key": "org_name",
+            "name": "Org Name",
+            "value": "U-Report"
+        },
+        {
+            "key": "password",
+            "name": "Password",
+            "value": "Chef"
+        }
+    ],
+    "groups": [
+        {
+            "uuid": "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d",
+            "name": "Testers"
+        },
+        {
+            "uuid": "1e1ce1e1-9288-4504-869e-022d1003c72a",
+            "name": "Customers"
+        },
+        {
+            "uuid": "0ec97956-c451-48a0-a180-1ce766623e31",
+            "name": "Males",
+            "query": "gender = male"
+        },
+        {
+            "uuid": "a5c50365-11d6-412b-b48f-53783b2a7803",
+            "name": "Females",
+            "query": "gender = female"
+        },
+        {
+            "uuid": "aa704054-95ea-49e4-b9d7-12090afb5403",
+            "name": "Francophones",
+            "query": "language = fra"
+        },
+        {
+            "uuid": "5389414a-66b8-408b-afec-07c5d68f6784",
+            "name": "Nameless",
+            "query": "name = \"\""
+        }
+    ],
+    "labels": [
+        {
+            "uuid": "3f65d88a-95dc-4140-9451-943e94e06fea",
+            "name": "Spam"
+        }
+    ],
+    "resthooks": [
+        {
+            "slug": "new-registration",
+            "subscribers": [
+                "http://temba.io/",
+                "http://unavailable.com/"
+            ]
+        },
+        {
+            "slug": "registration-complete",
+            "subscribers": [
+                "http://temba.io/",
+                "http://subscribergone.com/"
+            ]
+        },
+        {
+            "slug": "unpopular-resthook",
+            "subscribers": []
+        }
+    ],
+    "templates": [
+        {
+            "name": "affirmation",
+            "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+            "translations": [
+                {
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "language": "eng",
+                    "content": "Hi {{1}}, who's an excellent {{2}}?"
+                },
+                {
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "language": "spa",
+                    "content": "Hola {{1}}, quien es un {{2}} excelente?"
+                }
+            ]
+        },
+        {
+            "name": "wakeup",
+            "uuid": "2edc8dfd-aef0-41cf-a900-8a71bdb00900",
+            "translations": [
+                {
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "language": "eng",
+                    "content": "Hi there, it's time to get up!"
+                }
+            ]
+        }
+    ],
+    "ticketers": [
+        {
+            "uuid": "d605bb96-258d-4097-ad0a-080937db2212",
+            "name": "Support Tickets",
+            "type": "mailgun"
+        }
+    ]
+}

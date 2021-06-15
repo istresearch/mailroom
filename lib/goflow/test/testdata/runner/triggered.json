@@ -1,0 +1,79 @@
+{
+    "flows": [
+        {
+            "uuid": "ce902e6f-bc0a-40cf-a58c-1e300d15ec85",
+            "name": "Triggered Flow",
+            "spec_version": "13.0",
+            "language": "eng",
+            "type": "messaging",
+            "localization": {},
+            "nodes": [
+                {
+                    "uuid": "46d51f50-58de-49da-8d13-dadbf322685d",
+                    "actions": [
+                        {
+                            "uuid": "e97cd6d5-3354-4dbd-85bc-6c1f87849eec",
+                            "type": "send_msg",
+                            "text": "Hi @contact.name you were started in this flow by @parent.contact.name from the '@parent.run.flow.name' flow. He is from @(format_location(parent.contact.fields.state)) and is aged @parent.results.age.value."
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "fa60eef2-9985-46bd-8d58-4d1abf6ae93b"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "uuid": "93c554a1-b90d-4892-b029-a2a87dec9b87",
+            "name": "Parent Flow",
+            "spec_version": "13.0",
+            "language": "eng",
+            "type": "messaging",
+            "localization": {},
+            "nodes": []
+        }
+    ],
+    "fields": [
+        {
+            "uuid": "2ddd4c1b-e3cf-472e-b135-440b3453ba37",
+            "key": "first_name",
+            "name": "First Name",
+            "type": "text"
+        },
+        {
+            "uuid": "c88d2640-d124-438a-b666-5ec53a353dcd",
+            "key": "activation_token",
+            "name": "Activation Token",
+            "type": "text"
+        },
+        {
+            "uuid": "d66a7823-eada-40e5-9a3a-57239d4690bf",
+            "key": "gender",
+            "name": "Gender",
+            "type": "text"
+        },
+        {
+            "uuid": "b0078eb8-1d51-4cb5-bf09-119e201e6518",
+            "key": "state",
+            "name": "State",
+            "type": "state"
+        }
+    ],
+    "channels": [
+        {
+            "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+            "name": "Android Channel",
+            "address": "+17036975131",
+            "schemes": [
+                "tel"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ],
+            "country": "US"
+        }
+    ]
+}

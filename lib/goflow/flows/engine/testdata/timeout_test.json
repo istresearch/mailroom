@@ -1,0 +1,131 @@
+{
+    "flows": [
+        {
+            "uuid": "76f0a02f-3b75-4b86-9064-e9195e1b3a02",
+            "name": "Question With Timeout",
+            "spec_version": "13.0",
+            "language": "eng",
+            "type": "messaging",
+            "nodes": [
+                {
+                    "uuid": "46d51f50-58de-49da-8d13-dadbf322685d",
+                    "actions": [
+                        {
+                            "uuid": "e97cd6d5-3354-4dbd-85bc-6c1f87849eec",
+                            "type": "send_msg",
+                            "text": "Hi @contact.name! What is your favorite color?"
+                        }
+                    ],
+                    "router": {
+                        "type": "switch",
+                        "wait": {
+                            "type": "msg",
+                            "timeout": {
+                                "seconds": 600,
+                                "category_uuid": "78ae8f05-f92e-43b2-a886-406eaea1b8e0"
+                            }
+                        },
+                        "result_name": "Favorite Color",
+                        "categories": [
+                            {
+                                "uuid": "598ae7a5-2f81-48f1-afac-595262514aa1",
+                                "name": "Red",
+                                "exit_uuid": "a0d84faf-284d-43e5-a3f8-63891c454e20"
+                            },
+                            {
+                                "uuid": "c70fe86c-9aac-4cc2-a5cb-d35cbe3fed6e",
+                                "name": "Blue",
+                                "exit_uuid": "d21d7642-a4ca-49d0-8c2b-667ead24b14b"
+                            },
+                            {
+                                "uuid": "78ae8f05-f92e-43b2-a886-406eaea1b8e0",
+                                "name": "Timeout",
+                                "exit_uuid": "d6bf5696-2d5b-4750-9168-3ad55529696d"
+                            }
+                        ],
+                        "default_category_uuid": "78ae8f05-f92e-43b2-a886-406eaea1b8e0",
+                        "operand": "@input.text",
+                        "cases": [
+                            {
+                                "uuid": "98503572-25bf-40ce-ad72-8836b6549a38",
+                                "type": "has_any_word",
+                                "arguments": [
+                                    "red"
+                                ],
+                                "category_uuid": "598ae7a5-2f81-48f1-afac-595262514aa1"
+                            },
+                            {
+                                "uuid": "a51e5c8c-c891-401d-9c62-15fc37278c94",
+                                "type": "has_any_word",
+                                "arguments": [
+                                    "blue"
+                                ],
+                                "category_uuid": "c70fe86c-9aac-4cc2-a5cb-d35cbe3fed6e"
+                            }
+                        ]
+                    },
+                    "exits": [
+                        {
+                            "uuid": "a0d84faf-284d-43e5-a3f8-63891c454e20",
+                            "destination_uuid": "11a772f3-3ca2-4429-8b33-20fdcfc2b69e"
+                        },
+                        {
+                            "uuid": "d21d7642-a4ca-49d0-8c2b-667ead24b14b",
+                            "destination_uuid": "11a772f3-3ca2-4429-8b33-20fdcfc2b69e"
+                        },
+                        {
+                            "uuid": "d6bf5696-2d5b-4750-9168-3ad55529696d",
+                            "destination_uuid": "091decfb-c9b0-4dcf-954e-04927f119fc8"
+                        }
+                    ]
+                },
+                {
+                    "uuid": "11a772f3-3ca2-4429-8b33-20fdcfc2b69e",
+                    "actions": [
+                        {
+                            "uuid": "d2a4052a-3fa9-4608-ab3e-5b9631440447",
+                            "type": "send_msg",
+                            "text": "You said @results.favorite_color.category_localized. Thanks!"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "cee79a7f-51fd-414a-a9fb-f9c1f1baf186"
+                        }
+                    ]
+                },
+                {
+                    "uuid": "091decfb-c9b0-4dcf-954e-04927f119fc8",
+                    "actions": [
+                        {
+                            "uuid": "ec0cbd0a-0aaa-4cdd-8ce9-a0430b83d500",
+                            "type": "send_msg",
+                            "text": "Guess you're busy - catch you another time!"
+                        }
+                    ],
+                    "exits": [
+                        {
+                            "uuid": "bbaaec87-a646-435d-bade-e0a8ac09beb8"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "channels": [
+        {
+            "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+            "name": "Android Channel",
+            "address": "+17036975131",
+            "schemes": [
+                "tel"
+            ],
+            "roles": [
+                "send",
+                "receive"
+            ],
+            "country": "US"
+        }
+    ],
+    "locations": []
+}

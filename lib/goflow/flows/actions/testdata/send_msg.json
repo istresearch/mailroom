@@ -1,0 +1,657 @@
+[
+    {
+        "description": "Read fails when text is empty",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "",
+            "attachments": [
+                "http://example.com/red.jpg"
+            ]
+        },
+        "read_error": "field 'text' is required"
+    },
+    {
+        "description": "Read fails when topic is invalid",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "hi there",
+            "topic": "spam"
+        },
+        "read_error": "field 'topic' is not a valid message topic"
+    },
+    {
+        "description": "Error event if session has no contact",
+        "no_contact": true,
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there",
+            "attachments": [
+                "http://example.com/red.jpg"
+            ],
+            "quick_replies": [
+                "Red",
+                "Blue"
+            ],
+            "all_urns": true
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "can't execute action in session without a contact"
+            }
+        ],
+        "templates": [
+            "Hi there",
+            "http://example.com/red.jpg",
+            "Red",
+            "Blue"
+        ],
+        "localizables": [
+            "Hi there",
+            "http://example.com/red.jpg",
+            "Red",
+            "Blue"
+        ],
+        "inspection": {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Error events if msg text, attachments and quick replies have expression errors",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there @(1 / 0)",
+            "attachments": [
+                "http://example.com/red.jpg@(1 / 0)",
+                "@(xxxxx)"
+            ],
+            "quick_replies": [
+                "Red@(1 / 0)",
+                "Blue",
+                "@(xxxxx)"
+            ]
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(xxxxx): context has no property 'xxxxx'"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "attachment text evaluated to empty string, skipping"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(1 / 0): division by zero"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "error evaluating @(xxxxx): context has no property 'xxxxx'"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "quick reply text evaluated to empty string, skipping"
+            },
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi there ",
+                    "attachments": [
+                        "http://example.com/red.jpg"
+                    ],
+                    "quick_replies": [
+                        "Red",
+                        "Blue"
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "description": "Attachments and quick replies ignored if they are expressions which evaluate to empty",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there",
+            "attachments": [
+                "@(\"\")"
+            ],
+            "quick_replies": [
+                "@(\"\")"
+            ]
+        },
+        "events": [
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "attachment text evaluated to empty string, skipping"
+            },
+            {
+                "type": "error",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "text": "quick reply text evaluated to empty string, skipping"
+            },
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi there"
+                }
+            }
+        ]
+    },
+    {
+        "description": "Msg text that includes globals",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there @contact welcome to @globals.org_name, the secret password is @globals.password"
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi there Ryan Lewis welcome to U-Report, the secret password is Chef"
+                }
+            }
+        ],
+        "templates": [
+            "Hi there @contact welcome to @globals.org_name, the secret password is @globals.password"
+        ],
+        "localizables": [
+            "Hi there @contact welcome to @globals.org_name, the secret password is @globals.password"
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "key": "org_name",
+                    "name": "",
+                    "type": "global"
+                },
+                {
+                    "key": "password",
+                    "name": "",
+                    "type": "global"
+                }
+            ],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Msg created events for each URN if all_urns is set",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there",
+            "all_urns": true
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi there"
+                }
+            },
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "297611a6-b583-45c3-8587-d4e530c948f0",
+                    "urn": "twitterid:54784326227#nyaruka",
+                    "channel": {
+                        "uuid": "8e21f093-99aa-413b-b55b-758b54308fcb",
+                        "name": "Twitter Channel"
+                    },
+                    "text": "Hi there"
+                }
+            }
+        ]
+    },
+    {
+        "description": "Msg created event even if contact has no sendable URNs",
+        "no_urns": true,
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there"
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "text": "Hi there"
+                }
+            }
+        ]
+    },
+    {
+        "description": "Msg with a missing template",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi @contact.name, who's a good boy?",
+            "templating": {
+                "uuid": "9c4bf5b5-3aa4-48ec-9bb9-424a9cbc6785",
+                "template": {
+                    "uuid": "b620b463-8d15-427f-b2e3-4f44f9f071ec",
+                    "name": "missing"
+                },
+                "variables": [
+                    "@contact.name",
+                    "boy"
+                ]
+            }
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi Ryan Lewis, who's a good boy?"
+                }
+            }
+        ],
+        "templates": [
+            "Hi @contact.name, who's a good boy?",
+            "@contact.name",
+            "boy"
+        ],
+        "localizables": [
+            "Hi @contact.name, who's a good boy?",
+            "@contact.name",
+            "boy"
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "uuid": "b620b463-8d15-427f-b2e3-4f44f9f071ec",
+                    "name": "missing",
+                    "type": "template",
+                    "missing": true
+                }
+            ],
+            "issues": [
+                {
+                    "type": "missing_dependency",
+                    "node_uuid": "72a1f5df-49f9-45df-94c9-d86f7ea064e5",
+                    "action_uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+                    "description": "missing template dependency 'b620b463-8d15-427f-b2e3-4f44f9f071ec'",
+                    "dependency": {
+                        "uuid": "b620b463-8d15-427f-b2e3-4f44f9f071ec",
+                        "name": "missing",
+                        "type": "template"
+                    }
+                }
+            ],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Msg with a topic and a matching template",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi Ryan Lewis, who's a good boy?",
+            "templating": {
+                "uuid": "9c4bf5b5-3aa4-48ec-9bb9-424a9cbc6785",
+                "template": {
+                    "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                    "name": "affirmation"
+                },
+                "variables": [
+                    "@contact.name",
+                    "boy"
+                ]
+            },
+            "topic": "account"
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi Ryan Lewis, who's an excellent boy?",
+                    "templating": {
+                        "template": {
+                            "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                            "name": "affirmation"
+                        },
+                        "language": "eng",
+                        "variables": [
+                            "Ryan Lewis",
+                            "boy"
+                        ]
+                    },
+                    "topic": "account"
+                }
+            }
+        ],
+        "templates": [
+            "Hi Ryan Lewis, who's a good boy?",
+            "@contact.name",
+            "boy"
+        ],
+        "localizables": [
+            "Hi Ryan Lewis, who's a good boy?",
+            "@contact.name",
+            "boy"
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                    "name": "affirmation",
+                    "type": "template"
+                }
+            ],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Msg with a matching template with localized variables",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi Ryan Lewis, who's a good boy?",
+            "templating": {
+                "uuid": "9c4bf5b5-3aa4-48ec-9bb9-424a9cbc6785",
+                "template": {
+                    "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                    "name": "affirmation"
+                },
+                "variables": [
+                    "@contact.name",
+                    "boy"
+                ]
+            }
+        },
+        "localization": {
+            "spa": {
+                "9c4bf5b5-3aa4-48ec-9bb9-424a9cbc6785": {
+                    "variables": [
+                        "@contact.name",
+                        "niño"
+                    ]
+                }
+            }
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hola Ryan Lewis, quien es un niño excelente?",
+                    "templating": {
+                        "template": {
+                            "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                            "name": "affirmation"
+                        },
+                        "language": "spa",
+                        "variables": [
+                            "Ryan Lewis",
+                            "niño"
+                        ]
+                    }
+                }
+            }
+        ],
+        "templates": [
+            "Hi Ryan Lewis, who's a good boy?",
+            "@contact.name",
+            "boy",
+            "@contact.name",
+            "niño"
+        ],
+        "localizables": [
+            "Hi Ryan Lewis, who's a good boy?",
+            "@contact.name",
+            "boy"
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "uuid": "5722e1fd-fe32-4e74-ac78-3cf41a6adb7e",
+                    "name": "affirmation",
+                    "type": "template"
+                }
+            ],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Msg with template but no variables",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there, it's time to get up!",
+            "templating": {
+                "uuid": "2edc8dfd-aef0-41cf-a900-8a71bdb00900",
+                "template": {
+                    "uuid": "2edc8dfd-aef0-41cf-a900-8a71bdb00900",
+                    "name": "wakeup"
+                },
+                "variables": []
+            }
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hi there, it's time to get up!",
+                    "templating": {
+                        "template": {
+                            "uuid": "2edc8dfd-aef0-41cf-a900-8a71bdb00900",
+                            "name": "wakeup"
+                        },
+                        "language": "eng"
+                    }
+                }
+            }
+        ],
+        "templates": [
+            "Hi there, it's time to get up!"
+        ],
+        "localizables": [
+            "Hi there, it's time to get up!"
+        ],
+        "inspection": {
+            "dependencies": [
+                {
+                    "uuid": "2edc8dfd-aef0-41cf-a900-8a71bdb00900",
+                    "name": "wakeup",
+                    "type": "template"
+                }
+            ],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    },
+    {
+        "description": "Text, attachments and quick replies can be localized",
+        "action": {
+            "type": "send_msg",
+            "uuid": "ad154980-7bf7-4ab8-8728-545fd6378912",
+            "text": "Hi there!",
+            "attachments": [
+                "http://example.com/red.jpg"
+            ],
+            "quick_replies": [
+                "Yes",
+                "No"
+            ]
+        },
+        "localization": {
+            "spa": {
+                "ad154980-7bf7-4ab8-8728-545fd6378912": {
+                    "text": [
+                        "Hola!"
+                    ],
+                    "attachments": [
+                        "http://example.com/rojo.jpg"
+                    ],
+                    "quick_replies": [
+                        "Si",
+                        "No"
+                    ]
+                }
+            }
+        },
+        "events": [
+            {
+                "type": "msg_created",
+                "created_on": "2018-10-18T14:20:30.000123456Z",
+                "step_uuid": "59d74b86-3e2f-4a93-aece-b05d2fdcde0c",
+                "msg": {
+                    "uuid": "9688d21d-95aa-4bed-afc7-f31b35731a3d",
+                    "urn": "tel:+12065551212?channel=57f1078f-88aa-46f4-a59a-948a5739c03d&id=123",
+                    "channel": {
+                        "uuid": "57f1078f-88aa-46f4-a59a-948a5739c03d",
+                        "name": "My Android Phone"
+                    },
+                    "text": "Hola!",
+                    "attachments": [
+                        "http://example.com/rojo.jpg"
+                    ],
+                    "quick_replies": [
+                        "Si",
+                        "No"
+                    ]
+                }
+            }
+        ],
+        "templates": [
+            "Hi there!",
+            "Hola!",
+            "http://example.com/red.jpg",
+            "http://example.com/rojo.jpg",
+            "Yes",
+            "No",
+            "Si",
+            "No"
+        ],
+        "localizables": [
+            "Hi there!",
+            "http://example.com/red.jpg",
+            "Yes",
+            "No"
+        ],
+        "inspection": {
+            "dependencies": [],
+            "issues": [],
+            "results": [],
+            "waiting_exits": [],
+            "parent_refs": []
+        }
+    }
+]
