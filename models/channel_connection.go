@@ -355,7 +355,7 @@ func (c *ChannelConnection) MarkErrored(ctx context.Context, db Queryer, now tim
 	c.c.Status = ConnectionStatusErrored
 	c.c.EndedOn = &now
 
-	if c.c.RetryCount < ConnectionMaxRetries && wait >= 0{
+	if c.c.RetryCount < ConnectionMaxRetries && (wait >= time.Minute) {
 		c.c.RetryCount++
 		next := now.Add(wait)
 		c.c.NextAttempt = &next
