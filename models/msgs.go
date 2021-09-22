@@ -812,7 +812,7 @@ func CreateBroadcastMessages(ctx context.Context, db Queryer, rp *redis.Pool, oa
 
 		// no urn and channel? move on
 		if channel == nil {
-			logrus.WithField("contact_id", contact.UUID()).Info("Could not find channel for message")
+			logrus.WithField("contact_id", contact.UUID()).Error("Could not find channel for message")
 			return nil, nil
 		}
 
