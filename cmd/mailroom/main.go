@@ -41,6 +41,7 @@ import (
 	_ "github.com/nyaruka/mailroom/services/tickets/zendesk"
 
 	_ "github.com/nyaruka/mailroom/ivr/nexmo"
+	_ "github.com/nyaruka/mailroom/ivr/psm"
 	_ "github.com/nyaruka/mailroom/ivr/twiml"
 )
 
