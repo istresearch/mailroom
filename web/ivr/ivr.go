@@ -28,7 +28,7 @@ func init() {
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/handle", handleFlow)
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/status", handleStatus)
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/incoming", handleIncomingCall)
-	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/missed", handleMissedCall)
+	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/call", handleCallData)
 
 }
 
@@ -193,7 +193,8 @@ func handleIncomingCall(ctx context.Context, s *web.Server, r *http.Request, raw
 	return client.WriteEmptyResponse(w, "missed call handled")
 }
 
-func handleMissedCall(ctx context.Context, s *web.Server, r *http.Request, rawW http.ResponseWriter) error {
+// handleCallData is a generic endpoint to report missed, incoming, and outgoing calls that may happen outside the normal IVR flow
+func handleCallData(ctx context.Context, s *web.Server, r *http.Request, rawW http.ResponseWriter) error {
 	start := time.Now()
 
 	// dump our request
@@ -295,23 +296,29 @@ func handleMissedCall(ctx context.Context, s *web.Server, r *http.Request, rawW 
 		return client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get id for URN"))
 	}
 
-	// no session means no trigger, create a missed call event instead
-	// we first create an incoming call channel event and see if that matches
-	event := models.NewChannelEvent(models.MOMissEventType, oa.OrgID(), channel.ID(), contactID, urnID, nil, false)
+	eventType, duration := client.EventForCallDataRequest(r)
+
+	var extras map[string]interface{}
+
+	if eventType != models.MOMissEventType {
+		extras = map[string]interface{}{"duration": duration}
+	}
+
+	event := models.NewChannelEvent(eventType, oa.OrgID(), channel.ID(), contactID, urnID, extras, false)
+
 	err = event.Insert(ctx, s.DB)
 	if err != nil {
 		return client.WriteErrorResponse(w, errors.Wrapf(err, "error inserting channel event"))
 	}
 
-	// try to handle it, this time looking for a missed call event
-	_, err = handler.HandleChannelEvent(ctx, s.DB, s.RP, models.MOMissEventType, event, nil)
+	_, err = handler.HandleChannelEvent(ctx, s.DB, s.RP, eventType, event, nil)
 	if err != nil {
-		logrus.WithError(err).WithField("http_request", r).Error("error handling missed call")
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "error handling missed call"))
+		logrus.WithError(err).WithField("http_request", r).Error("error handling reported call status")
+		return client.WriteErrorResponse(w, errors.Wrapf(err, "error handling reported call status"))
 	}
 
 	// write our empty response
-	return client.WriteEmptyResponse(w, "missed call handled")
+	return client.WriteEmptyResponse(w, "reported call handled")
 }
 
 const (

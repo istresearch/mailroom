@@ -323,6 +323,10 @@ func (c *client) ValidateRequestSignature(r *http.Request) error {
 	return nil
 }
 
+func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	return "", 0
+}
+
 // WriteSessionResponse writes a TWIML response for the events in the passed in session
 func (c *client) WriteSessionResponse(session *models.Session, number urns.URN, resumeURL string, r *http.Request, w http.ResponseWriter) error {
 	// for errored sessions we should just output our error body

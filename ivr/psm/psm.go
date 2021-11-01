@@ -94,7 +94,7 @@ func (c *client) InputForRequest(r *http.Request) (string, utils.Attachment, err
 
 // StatusForRequest returns the current call status for the passed in status (and optional duration if known)
 func (c *client) StatusForRequest(r *http.Request) (models.ConnectionStatus, int) {
-	return models.ConnectionStatus(0), 0
+	return "", 0
 }
 
 // ValidateRequestSignature validates the signature on the passed in request, returning an error if it is invaled
@@ -115,4 +115,37 @@ func (c *client) WriteErrorResponse(w http.ResponseWriter, err error) error {
 // WriteEmptyResponse writes an empty (but valid) response
 func (c *client) WriteEmptyResponse(w http.ResponseWriter, msg string) error {
 	return nil
+}
+
+func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	// get our recording url out
+	body, err := readBody(r)
+	if err != nil {
+		return "", 0
+	}
+
+	status, err := jsonparser.GetString(body, "status")
+	if err != nil {
+		return "", 0
+	}
+
+	if status == "" {
+		status = "missed"
+	}
+
+	duration, err := jsonparser.GetInt(body, "duration")
+	if err != nil {
+		duration = 0
+	}
+
+	switch status {
+	case "miss":
+		return models.MOMissEventType, 0
+	case "in":
+		return models.MOCallEventType, int(duration)
+	case "out":
+		return models.MTCallEventType, int(duration)
+	}
+
+	return "", 0
 }
