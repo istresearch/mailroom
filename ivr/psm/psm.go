@@ -117,6 +117,7 @@ func (c *client) WriteEmptyResponse(w http.ResponseWriter, msg string) error {
 	return nil
 }
 
+// Get the channel event type and duration of a non-ivr call event
 func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
 	// get our recording url out
 	body, err := readBody(r)
