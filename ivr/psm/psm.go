@@ -3,6 +3,7 @@ package psm
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/nyaruka/gocommon/urns"
 	"github.com/nyaruka/goflow/utils"
 	"github.com/nyaruka/mailroom/ivr"
@@ -114,7 +115,16 @@ func (c *client) WriteErrorResponse(w http.ResponseWriter, err error) error {
 
 // WriteEmptyResponse writes an empty (but valid) response
 func (c *client) WriteEmptyResponse(w http.ResponseWriter, msg string) error {
-	return nil
+	msgBody := map[string]string{
+		"response": msg,
+	}
+	body, err := json.Marshal(msgBody)
+	if err != nil {
+		return errors.Wrapf(err, "error marshalling message")
+	}
+
+	_, err = w.Write(body)
+	return err
 }
 
 // Get the channel event type and duration of a non-ivr call event
