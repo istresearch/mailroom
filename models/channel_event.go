@@ -18,6 +18,7 @@ const (
 	ReferralEventType        = ChannelEventType("referral")
 	MOMissEventType          = ChannelEventType("mo_miss")
 	MOCallEventType          = ChannelEventType("mo_call")
+	MTCallEventType          = ChannelEventType("mt_call")
 )
 
 // ChannelEvent represents an event that occurred associated with a channel, such as a referral, missed call, etc..
