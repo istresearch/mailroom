@@ -3,11 +3,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: docker:18.03.0
+      - image: cimg/base:stable
 
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 20.10.7
 
       - run:
           name: "Build and push Docker image"
