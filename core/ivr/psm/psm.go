@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/nyaruka/gocommon/httpx"
 	"github.com/nyaruka/gocommon/urns"
 	"github.com/nyaruka/goflow/utils"
-	"github.com/nyaruka/mailroom/ivr"
-	"github.com/nyaruka/mailroom/models"
+	"github.com/nyaruka/mailroom/core/ivr"
+	"github.com/nyaruka/mailroom/core/models"
 	"io/ioutil"
 	"net/http"
 
@@ -30,7 +31,7 @@ func init() {
 }
 
 // NewClientFromChannel creates a new Twilio IVR client for the passed in account and and auth token
-func NewClientFromChannel(channel *models.Channel) (ivr.Client, error) {
+func NewClientFromChannel(httpClient *http.Client, channel *models.Channel) (ivr.Client, error) {
 	return &client{
 		channel:    channel,
 	}, nil
@@ -79,13 +80,13 @@ func (c *client) PreprocessResume(ctx context.Context, db *sqlx.DB, rp *redis.Po
 }
 
 // RequestCall causes this client to request a new outgoing call for this provider
-func (c *client) RequestCall(client *http.Client, number urns.URN, resumeURL string, statusURL string) (ivr.CallID, error) {
-	return ivr.CallID(""), nil
+func (c *client) RequestCall(number urns.URN, callbackURL string, statusURL string) (ivr.CallID, *httpx.Trace, error) {
+	return "", nil, nil
 }
 
 // HangupCall asks PSM to hang up the call that is passed in
-func (c *client) HangupCall(client *http.Client, callID string) error {
-	return nil
+func (c *client) HangupCall(callID string) (*httpx.Trace, error) {
+	return nil, nil
 }
 
 // InputForRequest returns the input for the passed in request, if any
@@ -104,7 +105,7 @@ func (c *client) ValidateRequestSignature(r *http.Request) error {
 }
 
 // WriteSessionResponse writes a TWIML response for the events in the passed in session
-func (c *client) WriteSessionResponse(session *models.Session, number urns.URN, resumeURL string, r *http.Request, w http.ResponseWriter) error {
+func (c *client) WriteSessionResponse(ctx context.Context, rp *redis.Pool, channel *models.Channel, conn *models.ChannelConnection, session *models.Session, number urns.URN, resumeURL string, r *http.Request, w http.ResponseWriter) error {
 	return nil
 }
 
@@ -159,4 +160,12 @@ func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventTy
 	}
 
 	return "", 0
+}
+
+func (c *client) ResumeForRequest(r *http.Request) (ivr.Resume, error) {
+	return nil, nil
+}
+
+func (c *client) PreprocessStatus(ctx context.Context, db *sqlx.DB, rp *redis.Pool, r *http.Request) ([]byte, error) {
+	return nil, nil
 }

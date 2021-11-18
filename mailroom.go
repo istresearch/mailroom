@@ -100,7 +100,7 @@ func (mr *Mailroom) Start() error {
 	db.SetMaxIdleConns(8)
 	db.SetMaxOpenConns(c.DBPoolSize)
 	db.SetConnMaxLifetime(time.Minute * 30)
-	mr.DB.SetConnMaxIdleTime(time.Minute * 10)
+	db.SetConnMaxIdleTime(time.Minute * 10)
 	mr.rt.DB = db
 
 	// try connecting
@@ -233,7 +233,7 @@ func (mr *Mailroom) Start() error {
 	mr.webserver.Start()
 
 	//handle custom schemes
-	for _,v := range strings.Split(mr.Config.CustomSchemes, ",") {
+	for _,v := range strings.Split(c.CustomSchemes, ",") {
 		urns.ValidSchemes[strings.Trim(v, " ")] = true
 	}
 

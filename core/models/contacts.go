@@ -560,7 +560,7 @@ func CreateContact(ctx context.Context, db QueryerWithTx, oa *OrgAssets, userID 
 	}
 
 	// find current owners of these URNs
-	owners, err := contactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
+	owners, err := ContactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "error looking up contacts for URNs")
 	}
@@ -648,7 +648,7 @@ func GetOrCreateContactIDsFromURNs(ctx context.Context, db QueryerWithTx, oa *Or
 	}
 
 	// find current owners of these URNs
-	owners, err := contactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
+	owners, err := ContactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error looking up contacts for URNs")
 	}
@@ -667,7 +667,7 @@ func GetOrCreateContactIDsFromURNs(ctx context.Context, db QueryerWithTx, oa *Or
 }
 
 // looks up the contacts who own the given urns (which should be normalized by the caller) and returns that information as a map
-func contactIDsFromURNs(ctx context.Context, db Queryer, orgID OrgID, urnz []urns.URN) (map[urns.URN]ContactID, error) {
+func ContactIDsFromURNs(ctx context.Context, db Queryer, orgID OrgID, urnz []urns.URN) (map[urns.URN]ContactID, error) {
 	identityToOriginal := make(map[urns.URN]urns.URN, len(urnz))
 	identities := make([]urns.URN, len(urnz))
 	owners := make(map[urns.URN]ContactID, len(urnz))
@@ -699,7 +699,7 @@ func contactIDsFromURNs(ctx context.Context, db Queryer, orgID OrgID, urnz []urn
 
 func getOrCreateContact(ctx context.Context, db QueryerWithTx, orgID OrgID, urnz []urns.URN, channelID ChannelID) (ContactID, bool, error) {
 	// find current owners of these URNs
-	owners, err := contactIDsFromURNs(ctx, db, orgID, urnz)
+	owners, err := ContactIDsFromURNs(ctx, db, orgID, urnz)
 	if err != nil {
 		return NilContactID, false, errors.Wrapf(err, "error looking up contacts for URNs")
 	}
@@ -719,7 +719,7 @@ func getOrCreateContact(ctx context.Context, db QueryerWithTx, orgID OrgID, urnz
 	if dbutil.IsUniqueViolation(err) {
 		// another thread must have created contacts with these URNs in the time between us looking them up and trying to
 		// create them ourselves, so let's try to fetch that contact
-		owners, err := contactIDsFromURNs(ctx, db, orgID, urnz)
+		owners, err := ContactIDsFromURNs(ctx, db, orgID, urnz)
 		if err != nil {
 			return NilContactID, false, errors.Wrapf(err, "error looking up contacts for URNs")
 		}

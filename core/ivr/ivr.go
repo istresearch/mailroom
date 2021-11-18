@@ -91,6 +91,8 @@ type Client interface {
 	URNForRequest(r *http.Request) (urns.URN, error)
 
 	CallIDForRequest(r *http.Request) (string, error)
+
+	EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int)
 }
 
 // HangupCall hangs up the passed in call also taking care of updating the status of our call in the process

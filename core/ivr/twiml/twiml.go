@@ -404,6 +404,10 @@ func (c *client) postRequest(sendURL string, form url.Values) (*httpx.Trace, err
 	return httpx.DoTrace(c.httpClient, req, nil, nil, -1)
 }
 
+func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	return "", 0
+}
+
 // see https://www.twilio.com/docs/api/security
 func twCalculateSignature(url string, form url.Values, authToken string) ([]byte, error) {
 	var buffer bytes.Buffer

@@ -401,6 +401,10 @@ type CallResponse struct {
 	ConversationUUID string `json:"conversation_uuid"`
 }
 
+func (c *client) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	return "", 0
+}
+
 // RequestCall causes this client to request a new outgoing call for this provider
 func (c *client) RequestCall(number urns.URN, resumeURL string, statusURL string) (ivr.CallID, *httpx.Trace, error) {
 	callR := &CallRequest{

@@ -28,7 +28,7 @@ func init() {
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/handle", newIVRHandler(handleFlow))
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/status", newIVRHandler(handleStatus))
 	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/incoming", newIVRHandler(handleIncomingCall))
-	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/call", handleCallData)
+	web.RegisterRoute(http.MethodPost, "/mr/ivr/c/{uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}}/call", newIVRHandler(handleCallData))
 }
 
 type ivrHandlerFn func(ctx context.Context, rt *runtime.Runtime, r *http.Request, w http.ResponseWriter) (*models.Channel, *models.ChannelConnection, error)
@@ -185,106 +185,64 @@ func handleIncomingCall(ctx context.Context, rt *runtime.Runtime, r *http.Reques
 }
 
 // handleCallData is a generic endpoint to report missed, incoming, and outgoing calls that may happen outside the normal IVR flow
-func handleCallData(ctx context.Context, s *web.Server, r *http.Request, rawW http.ResponseWriter) error {
-	start := time.Now()
-
-	// dump our request
-	requestTrace, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		return errors.Wrapf(err, "error creating request trace")
-	}
-
-	// wrap our writer
-	responseTrace := &bytes.Buffer{}
-	w := middleware.NewWrapResponseWriter(rawW, r.ProtoMajor)
-	w.Tee(responseTrace)
-
+func handleCallData(ctx context.Context, rt *runtime.Runtime, r *http.Request, w http.ResponseWriter) (*models.Channel, *models.ChannelConnection, error) {
 	channelUUID := assets.ChannelUUID(chi.URLParam(r, "uuid"))
 
 	// load the org id for this UUID (we could load the entire channel here but we want to take the same paths through everything else)
-	orgID, err := models.OrgIDForChannelUUID(ctx, s.DB, channelUUID)
+	orgID, err := models.OrgIDForChannelUUID(ctx, rt.DB, channelUUID)
 	if err != nil {
-		return writeClientError(w, err)
+		return nil, nil, writeClientError(w, err)
 	}
 
 	// load our org assets
-	oa, err := models.GetOrgAssets(ctx, s.DB, orgID)
+	oa, err := models.GetOrgAssets(ctx, rt.DB, orgID)
 	if err != nil {
-		return writeClientError(w, errors.Wrapf(err, "error loading org assets"))
+		return nil, nil, writeClientError(w, errors.Wrapf(err, "error loading org assets"))
 	}
 
 	// and our channel
 	channel := oa.ChannelByUUID(channelUUID)
 	if channel == nil {
-		return writeClientError(w, errors.Wrapf(err, "no active channel with uuid: %s", channelUUID))
+		return nil, nil, writeClientError(w, errors.Wrapf(err, "no active channel with uuid: %s", channelUUID))
 	}
-
-	var conn *models.ChannelConnection
-
-	// create a channel log for this request and connection
-	defer func() {
-		desc := "IVR event handled"
-		isError := false
-		if w.Status() != http.StatusOK {
-			desc = "IVR Error"
-			isError = true
-		}
-
-		path := r.URL.RequestURI()
-		proxyPath := r.Header.Get("X-Forwarded-Path")
-		if proxyPath != "" {
-			path = proxyPath
-		}
-
-		url := fmt.Sprintf("https://%s%s", r.Host, path)
-		_, err := models.InsertChannelLog(
-			ctx, s.DB, desc, isError,
-			r.Method, url, requestTrace, w.Status(), responseTrace.Bytes(),
-			start, time.Since(start),
-			channel, conn,
-		)
-		if err != nil {
-			logrus.WithError(err).WithField("http_request", r).Error("error writing ivr channel log")
-		}
-	}()
 
 	// get the right kind of client
 	client, err := ivr.GetClient(channel)
 	if client == nil {
-		return writeClientError(w, errors.Wrapf(err, "unable to load client for channel: %s", channelUUID))
+		return channel, nil, writeClientError(w, errors.Wrapf(err, "unable to load client for channel: %s", channelUUID))
 	}
 
 	// validate this request's signature
 	err = client.ValidateRequestSignature(r)
 	if err != nil {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "request failed signature validation"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "request failed signature validation"))
 	}
 
 	// lookup the URN of the caller
 	urn, err := client.URNForRequest(r)
 	if err != nil {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "unable to find URN in request"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to find URN in request"))
 	}
 
 	// get the contact id for this URN
-	ids, err := models.ContactIDsFromURNs(ctx, s.DB, oa, []urns.URN{urn})
+	ids, err := models.ContactIDsFromURNs(ctx, rt.DB, orgID, []urns.URN{urn})
 	if err != nil {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load contact by urn"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load contact by urn"))
 	}
 	contactID, found := ids[urn]
 	if !found {
-		return client.WriteErrorResponse(w, errors.Errorf("no contact for urn: %s", urn))
+		return channel, nil, client.WriteErrorResponse(w, errors.Errorf("no contact for urn: %s", urn))
 	}
 
-	urn, err = models.URNForURN(ctx, s.DB, oa, urn)
+	urn, err = models.URNForURN(ctx, rt.DB, oa, urn)
 	if err != nil {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load urn"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load urn"))
 	}
 
 	// urn ID
 	urnID := models.GetURNID(urn)
 	if urnID == models.NilURNID {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get id for URN"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get id for URN"))
 	}
 
 	eventType, duration := client.EventForCallDataRequest(r)
@@ -297,19 +255,19 @@ func handleCallData(ctx context.Context, s *web.Server, r *http.Request, rawW ht
 
 	event := models.NewChannelEvent(eventType, oa.OrgID(), channel.ID(), contactID, urnID, extras, false)
 
-	err = event.Insert(ctx, s.DB)
+	err = event.Insert(ctx, rt.DB)
 	if err != nil {
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "error inserting channel event"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "error inserting channel event"))
 	}
 
-	_, err = handler.HandleChannelEvent(ctx, s.DB, s.RP, eventType, event, nil)
+	_, err = handler.HandleChannelEvent(ctx, rt, eventType, event, nil)
 	if err != nil {
 		logrus.WithError(err).WithField("http_request", r).Error("error handling reported call status")
-		return client.WriteErrorResponse(w, errors.Wrapf(err, "error handling reported call status"))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "error handling reported call status"))
 	}
 
 	// write our empty response
-	return client.WriteEmptyResponse(w, "reported call handled")
+	return channel, nil, client.WriteEmptyResponse(w, "reported call handled")
 }
 
 const (
