@@ -14,8 +14,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o mailroom ./cmd/mailroom/main.go
 RUN apt update && apt install -y curl
 
 RUN export GOFLOW_VERSION=$(grep goflow go.mod | cut -d" " -f2 | head -n 1) && \
- curl https://codeload.github.com/nyaruka/goflow/tar.gz/$GOFLOW_VERSION | tar --wildcards --strip=2 -zx "*/docs/en_US/*" \
- && mv en_US docs
+                   curl -L https://github.com/nyaruka/goflow/releases/download/${GOFLOW_VERSION}/docs.tar.gz | tar zxv && \
+                   cp ./docs/en-us/*.* docs/
 
 FROM alpine:3.7
 
