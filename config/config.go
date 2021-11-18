@@ -70,6 +70,7 @@ type Config struct {
 	Port      int    `help:"the port to bind our web server to"`
 
 	UUIDSeed int `help:"seed to use for UUID generation in a testing environment"`
+	CustomSchemes string `help:"custom schemes not included in the defaults, comma-separated"`
 }
 
 // NewMailroomConfig returns a new default configuration object
@@ -111,6 +112,7 @@ func NewMailroomConfig() *Config {
 		Port:    8090,
 
 		UUIDSeed: 0,
+		CustomSchemes: "",
 	}
 }
 

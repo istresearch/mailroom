@@ -36,3 +36,5 @@ require (
 )
 
 go 1.14
+
+replace github.com/nyaruka/goflow v0.94.2 => github.com/istresearch/goflow v0.94.2-2

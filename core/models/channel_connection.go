@@ -5,9 +5,10 @@ import (
 	"database/sql/driver"
 	"time"
 
+	"github.com/nyaruka/null"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/nyaruka/null"
 	"github.com/pkg/errors"
 )
 
@@ -357,7 +358,7 @@ func (c *ChannelConnection) MarkErrored(ctx context.Context, db Queryer, now tim
 	c.c.Status = ConnectionStatusErrored
 	c.c.EndedOn = &now
 
-	if c.c.RetryCount < ConnectionMaxRetries {
+	if c.c.RetryCount < ConnectionMaxRetries && (wait > time.Minute) {
 		c.c.RetryCount++
 		next := now.Add(wait)
 		c.c.NextAttempt = &next

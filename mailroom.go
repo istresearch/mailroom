@@ -3,6 +3,7 @@ package mailroom
 import (
 	"context"
 	"fmt"
+	"github.com/nyaruka/gocommon/urns"
 	"net/url"
 	"os"
 	"strings"
@@ -99,6 +100,7 @@ func (mr *Mailroom) Start() error {
 	db.SetMaxIdleConns(8)
 	db.SetMaxOpenConns(c.DBPoolSize)
 	db.SetConnMaxLifetime(time.Minute * 30)
+	mr.DB.SetConnMaxIdleTime(time.Minute * 10)
 	mr.rt.DB = db
 
 	// try connecting
@@ -201,7 +203,7 @@ func (mr *Mailroom) Start() error {
 	// initialize our elastic client
 	mr.rt.ES, err = newElasticClient(c.Elastic)
 	if err != nil {
-		log.WithError(err).Error("unable to connect to elastic, check configuration")
+		return fmt.Errorf("unable to connect to elastic, check configuration: %s", err)
 	} else {
 		log.Info("elastic ok")
 	}
@@ -229,6 +231,11 @@ func (mr *Mailroom) Start() error {
 	// start our web server
 	mr.webserver = web.NewServer(mr.ctx, c, mr.rt.DB, mr.rt.RP, mr.rt.MediaStorage, mr.rt.ES, mr.wg)
 	mr.webserver.Start()
+
+	//handle custom schemes
+	for _,v := range strings.Split(mr.Config.CustomSchemes, ",") {
+		urns.ValidSchemes[strings.Trim(v, " ")] = true
+	}
 
 	logrus.Info("mailroom started")
 
