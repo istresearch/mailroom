@@ -224,14 +224,10 @@ func handleCallData(ctx context.Context, rt *runtime.Runtime, r *http.Request, w
 		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to find URN in request"))
 	}
 
-	// get the contact id for this URN
-	ids, err := models.ContactIDsFromURNs(ctx, rt.DB, orgID, []urns.URN{urn})
+	// get the contact for this URN
+	contact, _, _, err := models.GetOrCreateContact(ctx, rt.DB, oa, []urns.URN{urn}, channel.ID())
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load contact by urn"))
-	}
-	contactID, found := ids[urn]
-	if !found {
-		return channel, nil, client.WriteErrorResponse(w, errors.Errorf("no contact for urn: %s", urn))
+		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get contact by urn"))
 	}
 
 	urn, err = models.URNForURN(ctx, rt.DB, oa, urn)
@@ -253,7 +249,7 @@ func handleCallData(ctx context.Context, rt *runtime.Runtime, r *http.Request, w
 		extras = map[string]interface{}{"duration": duration}
 	}
 
-	event := models.NewChannelEvent(eventType, oa.OrgID(), channel.ID(), contactID, urnID, extras, false)
+	event := models.NewChannelEvent(eventType, oa.OrgID(), channel.ID(), contact.ID(), urnID, extras, false)
 
 	err = event.Insert(ctx, rt.DB)
 	if err != nil {
