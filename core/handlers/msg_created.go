@@ -115,6 +115,7 @@ func handleMsgCreated(ctx context.Context, tx *sqlx.Tx, rp *redis.Pool, oa *mode
 
 	// don't send messages for surveyor flows
 	if scene.Session().SessionType() != models.FlowTypeSurveyor {
+		msg.SetLabels(event.Msg.Labels)
 		scene.AppendToEventPostCommitHook(hooks.SendMessagesHook, msg)
 	}
 

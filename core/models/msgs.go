@@ -136,6 +136,8 @@ type Msg struct {
 	}
 
 	channel *Channel
+
+	labels []*assets.LabelReference
 }
 
 func (m *Msg) ID() flows.MsgID                  { return m.m.ID }
@@ -171,6 +173,9 @@ func (m *Msg) IsResend() bool                   { return m.m.IsResend }
 func (m *Msg) SetTopup(topupID TopupID)               { m.m.TopupID = topupID }
 func (m *Msg) SetChannelID(channelID ChannelID)       { m.m.ChannelID = channelID }
 func (m *Msg) SetBroadcastID(broadcastID BroadcastID) { m.m.BroadcastID = broadcastID }
+
+func (m *Msg) SetLabels(labels []*assets.LabelReference) { m.labels = labels }
+func (m *Msg) Labels() []*assets.LabelReference { return m.labels }
 
 func (m *Msg) SetURN(urn urns.URN) error {
 	// noop for nil urn
