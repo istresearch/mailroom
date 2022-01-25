@@ -37,7 +37,7 @@ type Config struct {
 	WebhooksInitialBackoff int     `help:"the initial backoff in milliseconds when retrying a failed webhook call"`
 	WebhooksBackoffJitter  float64 `help:"the amount of jitter to apply to backoff times"`
 	SMTPServer             string  `help:"the smtp configuration for sending emails ex: smtp://user%40password@server:port/?from=foo%40gmail.com"`
-	DisallowedIPs          string  `help:"comma separated list of IP addresses which engine can't make HTTP calls to"`
+	DisallowedNetworks     string  `help:"comma separated list of IP addresses and networks which engine can't make HTTP calls to"`
 	MaxStepsPerSprint      int     `help:"the maximum number of steps allowed per engine sprint"`
 	MaxValueLength         int     `help:"the maximum size in characters for contact field values and run result values"`
 
@@ -47,12 +47,18 @@ type Config struct {
 	Domain           string `help:"the domain that mailroom is listening on"`
 	AttachmentDomain string `help:"the domain that will be used for relative attachment"`
 
-	S3Endpoint         string `help:"the S3 endpoint we will write attachments to"`
-	S3Region           string `help:"the S3 region we will write attachments to"`
-	S3MediaBucket      string `help:"the S3 bucket we will write attachments to"`
-	S3MediaPrefix      string `help:"the prefix that will be added to attachment filenames"`
-	S3DisableSSL       bool   `help:"whether we disable SSL when accessing S3. Should always be set to False unless you're hosting an S3 compatible service within a secure internal network"`
-	S3ForcePathStyle   bool   `help:"whether we force S3 path style. Should generally need to default to False unless you're hosting an S3 compatible service"`
+	S3Endpoint string `help:"the S3 endpoint we will write attachments to"`
+	S3Region   string `help:"the S3 region we will write attachments to"`
+
+	S3MediaBucket string `help:"the S3 bucket we will write attachments to"`
+	S3MediaPrefix string `help:"the prefix that will be added to attachment filenames"`
+
+	S3SessionBucket string `help:"the S3 bucket we will write attachments to"`
+	S3SessionPrefix string `help:"the prefix that will be added to attachment filenames"`
+
+	S3DisableSSL     bool `help:"whether we disable SSL when accessing S3. Should always be set to False unless you're hosting an S3 compatible service within a secure internal network"`
+	S3ForcePathStyle bool `help:"whether we force S3 path style. Should generally need to default to False unless you're hosting an S3 compatible service"`
+
 	AWSAccessKeyID     string `help:"the access key id to use when authenticating S3"`
 	AWSSecretAccessKey string `help:"the secret access key id to use when authenticating S3"`
 
@@ -63,8 +69,8 @@ type Config struct {
 	Address   string `help:"the address to bind our web server to"`
 	Port      int    `help:"the port to bind our web server to"`
 
-	CustomSchemes string `help:"custom schemes not included in the defaults, comma-separated"`
 	UUIDSeed int `help:"seed to use for UUID generation in a testing environment"`
+	CustomSchemes string `help:"custom schemes not included in the defaults, comma-separated"`
 }
 
 // NewMailroomConfig returns a new default configuration object
@@ -85,7 +91,7 @@ func NewMailroomConfig() *Config {
 		WebhooksInitialBackoff: 5000,
 		WebhooksBackoffJitter:  0.5,
 		SMTPServer:             "",
-		DisallowedIPs:          `127.0.0.1,::1`,
+		DisallowedNetworks:     `127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,169.254.0.0/16,fe80::/10`,
 		MaxStepsPerSprint:      100,
 		MaxValueLength:         640,
 
@@ -93,34 +99,57 @@ func NewMailroomConfig() *Config {
 		S3Region:           "us-east-1",
 		S3MediaBucket:      "mailroom-media",
 		S3MediaPrefix:      "/media/",
+		S3SessionBucket:    "mailroom-sessions",
+		S3SessionPrefix:    "/",
 		S3DisableSSL:       false,
 		S3ForcePathStyle:   false,
-		AWSAccessKeyID:     "missing_aws_access_key_id",
-		AWSSecretAccessKey: "missing_aws_secret_access_key",
+		AWSAccessKeyID:     "",
+		AWSSecretAccessKey: "",
 
 		RetryPendingMessages: true,
 
 		Address: "localhost",
 		Port:    8090,
 
-		CustomSchemes: "",
 		UUIDSeed: 0,
+		CustomSchemes: "",
 	}
 }
 
-func (c *Config) ParseDisallowedIPs() ([]net.IP, error) {
-	addrs, err := csv.NewReader(strings.NewReader(c.DisallowedIPs)).Read()
-	if err != nil && err != io.EOF {
-		return nil, err
+// Validate validates the config
+func (c *Config) Validate() error {
+	_, _, err := c.ParseDisallowedNetworks()
+	if err != nil {
+		return errors.Wrap(err, "unable to parse DisallowedNetworks")
 	}
-	ips := make([]net.IP, 0, len(addrs))
-	for _, addr := range addrs {
-		ip := net.ParseIP(addr)
-		if ip == nil {
-			return nil, errors.Errorf("couldn't parse '%s' as an IP address", addr)
-		}
-		ips = append(ips, ip)
+	return nil
+}
+
+// ParseDisallowedNetworks parses the list of IPs and IP networks (written in CIDR notation)
+func (c *Config) ParseDisallowedNetworks() ([]net.IP, []*net.IPNet, error) {
+	addrs, err := csv.NewReader(strings.NewReader(c.DisallowedNetworks)).Read()
+	if err != nil && err != io.EOF {
+		return nil, nil, err
 	}
 
-	return ips, nil
+	ips := make([]net.IP, 0, len(addrs))
+	ipNets := make([]*net.IPNet, 0, len(addrs))
+
+	for _, addr := range addrs {
+		if strings.Contains(addr, "/") {
+			_, ipNet, err := net.ParseCIDR(addr)
+			if err != nil {
+				return nil, nil, errors.Errorf("couldn't parse '%s' as an IP network", addr)
+			}
+			ipNets = append(ipNets, ipNet)
+		} else {
+			ip := net.ParseIP(addr)
+			if ip == nil {
+				return nil, nil, errors.Errorf("couldn't parse '%s' as an IP address", addr)
+			}
+			ips = append(ips, ip)
+		}
+	}
+
+	return ips, ipNets, nil
 }

@@ -12,3 +12,4 @@ archives:
     - LICENSE
     - README.md
     - docs/*
+    - docs/**/*

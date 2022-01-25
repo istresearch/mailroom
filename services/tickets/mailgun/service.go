@@ -7,11 +7,11 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/nyaruka/gocommon/httpx"
 	"github.com/nyaruka/goflow/flows"
 	"github.com/nyaruka/goflow/utils"
-	"github.com/nyaruka/goflow/utils/httpx"
-	"github.com/nyaruka/goflow/utils/uuids"
-	"github.com/nyaruka/mailroom/models"
+	"github.com/nyaruka/mailroom/config"
+	"github.com/nyaruka/mailroom/core/models"
 	"github.com/nyaruka/mailroom/services/tickets"
 
 	"github.com/pkg/errors"
@@ -83,7 +83,7 @@ type service struct {
 }
 
 // NewService creates a new mailgun email-based ticket service
-func NewService(httpClient *http.Client, httpRetries *httpx.RetryConfig, ticketer *flows.Ticketer, config map[string]string) (models.TicketService, error) {
+func NewService(rtCfg *config.Config, httpClient *http.Client, httpRetries *httpx.RetryConfig, ticketer *flows.Ticketer, config map[string]string) (models.TicketService, error) {
 	domain := config[configDomain]
 	apiKey := config[configAPIKey]
 	toAddress := config[configToAddress]
@@ -108,14 +108,14 @@ func NewService(httpClient *http.Client, httpRetries *httpx.RetryConfig, tickete
 
 // Open opens a ticket which for mailgun means just sending an initial email
 func (s *service) Open(session flows.Session, subject, body string, logHTTP flows.HTTPLogCallback) (*flows.Ticket, error) {
-	ticketUUID := flows.TicketUUID(uuids.New())
+	ticket := flows.OpenTicket(s.ticketer, subject, body)
 	contactDisplay := tickets.GetContactDisplay(session.Environment(), session.Contact())
 
-	from := s.ticketAddress(contactDisplay, ticketUUID)
+	from := s.ticketAddress(contactDisplay, ticket.UUID())
 	context := s.templateContext(subject, body, "", string(session.Contact().UUID()), contactDisplay)
 	fullBody := evaluateTemplate(openBodyTemplate, context)
 
-	msgID, trace, err := s.client.SendMessage(from, s.toAddress, subject, fullBody, nil)
+	msgID, trace, err := s.client.SendMessage(from, s.toAddress, subject, fullBody, nil, nil)
 	if trace != nil {
 		logHTTP(flows.NewHTTPLog(trace, flows.HTTPStatusFromCode, s.redactor))
 	}
@@ -123,14 +123,15 @@ func (s *service) Open(session flows.Session, subject, body string, logHTTP flow
 		return nil, errors.Wrap(err, "error calling mailgun API")
 	}
 
-	return flows.NewTicket(ticketUUID, s.ticketer.Reference(), subject, body, msgID), nil
+	ticket.SetExternalID(msgID)
+	return ticket, nil
 }
 
-func (s *service) Forward(ticket *models.Ticket, msgUUID flows.MsgUUID, text string, logHTTP flows.HTTPLogCallback) error {
+func (s *service) Forward(ticket *models.Ticket, msgUUID flows.MsgUUID, text string, attachments []utils.Attachment, logHTTP flows.HTTPLogCallback) error {
 	context := s.templateContext(ticket.Subject(), ticket.Body(), text, ticket.Config(ticketConfigContactUUID), ticket.Config(ticketConfigContactDisplay))
 	body := evaluateTemplate(forwardBodyTemplate, context)
 
-	_, err := s.sendInTicket(ticket, body, logHTTP)
+	_, err := s.sendInTicket(ticket, body, attachments, logHTTP)
 	return err
 }
 
@@ -139,7 +140,7 @@ func (s *service) Close(tickets []*models.Ticket, logHTTP flows.HTTPLogCallback)
 		context := s.templateContext(ticket.Subject(), ticket.Body(), "", ticket.Config(ticketConfigContactUUID), ticket.Config(ticketConfigContactDisplay))
 		body := evaluateTemplate(closedBodyTemplate, context)
 
-		_, err := s.sendInTicket(ticket, body, logHTTP)
+		_, err := s.sendInTicket(ticket, body, nil, logHTTP)
 		if err != nil {
 			return err
 		}
@@ -152,7 +153,7 @@ func (s *service) Reopen(tickets []*models.Ticket, logHTTP flows.HTTPLogCallback
 		context := s.templateContext(ticket.Subject(), ticket.Body(), "", ticket.Config(ticketConfigContactUUID), ticket.Config(ticketConfigContactDisplay))
 		body := evaluateTemplate(reopenedBodyTemplate, context)
 
-		_, err := s.sendInTicket(ticket, body, logHTTP)
+		_, err := s.sendInTicket(ticket, body, nil, logHTTP)
 		if err != nil {
 			return err
 		}
@@ -161,7 +162,7 @@ func (s *service) Reopen(tickets []*models.Ticket, logHTTP flows.HTTPLogCallback
 }
 
 // sends an email as part of the thread for the given ticket
-func (s *service) sendInTicket(ticket *models.Ticket, text string, logHTTP flows.HTTPLogCallback) (string, error) {
+func (s *service) sendInTicket(ticket *models.Ticket, text string, attachments []utils.Attachment, logHTTP flows.HTTPLogCallback) (string, error) {
 	contactDisplay := ticket.Config(ticketConfigContactDisplay)
 	lastMessageID := ticket.Config(ticketConfigLastMessageID)
 	if lastMessageID == "" {
@@ -173,11 +174,21 @@ func (s *service) sendInTicket(ticket *models.Ticket, text string, logHTTP flows
 	}
 	from := s.ticketAddress(contactDisplay, ticket.UUID())
 
-	return s.send(from, s.toAddress, ticket.Subject(), text, headers, logHTTP)
+	return s.send(from, s.toAddress, ticket.Subject(), text, attachments, headers, logHTTP)
 }
 
-func (s *service) send(from, to, subject, text string, headers map[string]string, logHTTP flows.HTTPLogCallback) (string, error) {
-	msgID, trace, err := s.client.SendMessage(from, to, subject, text, headers)
+func (s *service) send(from, to, subject, text string, attachments []utils.Attachment, headers map[string]string, logHTTP flows.HTTPLogCallback) (string, error) {
+	// fetch our attachments and convert to email attachments
+	emailAttachments := make([]*EmailAttachment, len(attachments))
+	for i, attachment := range attachments {
+		file, err := tickets.FetchFile(attachment.URL(), nil)
+		if err != nil {
+			return "", errors.Wrapf(err, "error fetching attachment file")
+		}
+		emailAttachments[i] = &EmailAttachment{Filename: "untitled", ContentType: file.ContentType, Body: file.Body}
+	}
+
+	msgID, trace, err := s.client.SendMessage(from, to, subject, text, emailAttachments, headers)
 	if trace != nil {
 		logHTTP(flows.NewHTTPLog(trace, flows.HTTPStatusFromCode, s.redactor))
 	}

@@ -3,13 +3,15 @@ package zendesk
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
+	"github.com/nyaruka/gocommon/dates"
+	"github.com/nyaruka/gocommon/httpx"
 	"github.com/nyaruka/goflow/flows"
 	"github.com/nyaruka/goflow/utils"
-	"github.com/nyaruka/goflow/utils/dates"
-	"github.com/nyaruka/goflow/utils/httpx"
-	"github.com/nyaruka/goflow/utils/uuids"
-	"github.com/nyaruka/mailroom/models"
+	"github.com/nyaruka/mailroom/config"
+	"github.com/nyaruka/mailroom/core/models"
 
 	"github.com/pkg/errors"
 )
@@ -35,6 +37,7 @@ func init() {
 }
 
 type service struct {
+	rtConfig       *config.Config
 	restClient     *RESTClient
 	pushClient     *PushClient
 	ticketer       *flows.Ticketer
@@ -46,7 +49,7 @@ type service struct {
 }
 
 // NewService creates a new zendesk ticket service
-func NewService(httpClient *http.Client, httpRetries *httpx.RetryConfig, ticketer *flows.Ticketer, config map[string]string) (models.TicketService, error) {
+func NewService(rtCfg *config.Config, httpClient *http.Client, httpRetries *httpx.RetryConfig, ticketer *flows.Ticketer, config map[string]string) (models.TicketService, error) {
 	subdomain := config[configSubdomain]
 	secret := config[configSecret]
 	oAuthToken := config[configOAuthToken]
@@ -57,6 +60,7 @@ func NewService(httpClient *http.Client, httpRetries *httpx.RetryConfig, tickete
 
 	if subdomain != "" && secret != "" && oAuthToken != "" && instancePushID != "" && pushToken != "" {
 		return &service{
+			rtConfig:       rtCfg,
 			restClient:     NewRESTClient(httpClient, httpRetries, subdomain, oAuthToken),
 			pushClient:     NewPushClient(httpClient, httpRetries, subdomain, pushToken),
 			ticketer:       ticketer,
@@ -72,13 +76,13 @@ func NewService(httpClient *http.Client, httpRetries *httpx.RetryConfig, tickete
 
 // Open opens a ticket which for mailgun means just sending an initial email
 func (s *service) Open(session flows.Session, subject, body string, logHTTP flows.HTTPLogCallback) (*flows.Ticket, error) {
-	ticketUUID := flows.TicketUUID(uuids.New())
+	ticket := flows.OpenTicket(s.ticketer, subject, body)
 	contactDisplay := session.Contact().Format(session.Environment())
 
 	msg := &ExternalResource{
-		ExternalID: string(ticketUUID), // there's no local msg so use ticket UUID instead
+		ExternalID: string(ticket.UUID()), // there's no local msg so use ticket UUID instead
 		Message:    body,
-		ThreadID:   string(ticketUUID),
+		ThreadID:   string(ticket.UUID()),
 		CreatedAt:  dates.Now(),
 		Author: Author{
 			ExternalID: string(session.Contact().UUID()),
@@ -91,12 +95,17 @@ func (s *service) Open(session flows.Session, subject, body string, logHTTP flow
 		return nil, err
 	}
 
-	return flows.NewTicket(ticketUUID, s.ticketer.Reference(), subject, body, ""), nil
+	return ticket, nil
 }
 
-func (s *service) Forward(ticket *models.Ticket, msgUUID flows.MsgUUID, text string, logHTTP flows.HTTPLogCallback) error {
+func (s *service) Forward(ticket *models.Ticket, msgUUID flows.MsgUUID, text string, attachments []utils.Attachment, logHTTP flows.HTTPLogCallback) error {
 	contactUUID := ticket.Config("contact-uuid")
 	contactDisplay := ticket.Config("contact-display")
+
+	fileURLs, err := s.convertAttachments(attachments)
+	if err != nil {
+		return errors.Wrap(err, "error converting attachments")
+	}
 
 	msg := &ExternalResource{
 		ExternalID: string(msgUUID),
@@ -107,6 +116,7 @@ func (s *service) Forward(ticket *models.Ticket, msgUUID flows.MsgUUID, text str
 			ExternalID: contactUUID,
 			Name:       contactDisplay,
 		},
+		FileURLs:         fileURLs,
 		AllowChannelback: true,
 	}
 
@@ -232,4 +242,30 @@ func (s *service) push(msg *ExternalResource, logHTTP flows.HTTPLogCallback) err
 		return errors.Wrap(err, "error pushing message to zendesk")
 	}
 	return nil
+}
+
+// convert attachments to URLs which Zendesk can POST to.
+//
+// For example https://mybucket.s3.amazonaws.com/attachments/1/01c1/1aa4/01c11aa4-770a-4783.jpg
+// is sent to Zendesk as file/1/01c1/1aa4/01c11aa4-770a-4783.jpg
+// which it will request as POST https://textit.com/tickets/types/zendesk/file/1/01c1/1aa4/01c11aa4-770a-4783.jpg
+//
+func (s *service) convertAttachments(attachments []utils.Attachment) ([]string, error) {
+	prefix := s.rtConfig.S3MediaPrefix
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+
+	fileURLs := make([]string, len(attachments))
+	for i, a := range attachments {
+		u, err := url.Parse(a.URL())
+		if err != nil {
+			return nil, err
+		}
+		path := strings.TrimPrefix(u.Path, prefix)
+		path = strings.TrimPrefix(path, "/")
+
+		fileURLs[i] = "file/" + path
+	}
+	return fileURLs, nil
 }
