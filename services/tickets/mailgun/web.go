@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	"github.com/nyaruka/goflow/flows"
-	"github.com/nyaruka/mailroom/models"
+	"github.com/nyaruka/mailroom/core/models"
+	"github.com/nyaruka/mailroom/runtime"
 	"github.com/nyaruka/mailroom/services/tickets"
 	"github.com/nyaruka/mailroom/web"
 
@@ -25,18 +26,19 @@ func init() {
 }
 
 type receiveRequest struct {
-	Recipient    string `form:"recipient"     validate:"required,email"`
-	Sender       string `form:"sender"        validate:"required,email"`
-	From         string `form:"From"`
-	ReplyTo      string `form:"Reply-To"`
-	MessageID    string `form:"Message-Id"    validate:"required"`
-	Subject      string `form:"subject"       validate:"required"`
-	PlainBody    string `form:"body-plain"`
-	StrippedText string `form:"stripped-text" validate:"required"`
-	HTMLBody     string `form:"body-html"`
-	Timestamp    string `form:"timestamp"     validate:"required"`
-	Token        string `form:"token"         validate:"required"`
-	Signature    string `form:"signature"     validate:"required"`
+	Recipient       string `form:"recipient"     validate:"required,email"`
+	Sender          string `form:"sender"        validate:"required,email"`
+	From            string `form:"From"`
+	ReplyTo         string `form:"Reply-To"`
+	MessageID       string `form:"Message-Id"    validate:"required"`
+	Subject         string `form:"subject"       validate:"required"`
+	PlainBody       string `form:"body-plain"`
+	StrippedText    string `form:"stripped-text" validate:"required"`
+	HTMLBody        string `form:"body-html"`
+	Timestamp       string `form:"timestamp"     validate:"required"`
+	Token           string `form:"token"         validate:"required"`
+	Signature       string `form:"signature"     validate:"required"`
+	AttachmentCount int    `form:"attachment-count"`
 }
 
 // see https://documentation.mailgun.com/en/latest/user_manual.html#securing-webhooks
@@ -59,14 +61,24 @@ type receiveResponse struct {
 
 var addressRegex = regexp.MustCompile(`^ticket\+([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})@.*$`)
 
-func handleReceive(ctx context.Context, s *web.Server, r *http.Request, l *models.HTTPLogger) (interface{}, int, error) {
+func handleReceive(ctx context.Context, rt *runtime.Runtime, r *http.Request, l *models.HTTPLogger) (interface{}, int, error) {
 	request := &receiveRequest{}
 	if err := web.DecodeAndValidateForm(request, r); err != nil {
 		return errors.Wrapf(err, "error decoding form"), http.StatusBadRequest, nil
 	}
 
-	if !request.verify(s.Config.MailgunSigningKey) {
+	if !request.verify(rt.Config.MailgunSigningKey) {
 		return errors.New("request signature validation failed"), http.StatusForbidden, nil
+	}
+
+	// decode any attachments
+	files := make([]*tickets.File, request.AttachmentCount)
+	for i := range files {
+		file, header, err := r.FormFile(fmt.Sprintf("attachment-%d", i+1))
+		if err != nil {
+			return errors.Wrapf(err, "error decoding attachment #%d", i+1), http.StatusBadRequest, nil
+		}
+		files[i] = &tickets.File{URL: header.Filename, ContentType: header.Header.Get("Content-Type"), Body: file}
 	}
 
 	// recipient is in the format ticket+<ticket-uuid>@... parse it out
@@ -76,7 +88,7 @@ func handleReceive(ctx context.Context, s *web.Server, r *http.Request, l *model
 	}
 
 	// look up the ticket and ticketer
-	ticket, ticketer, svc, err := tickets.FromTicketUUID(s.CTX, s.DB, flows.TicketUUID(match[0][1]), typeMailgun)
+	ticket, ticketer, svc, err := tickets.FromTicketUUID(ctx, rt.DB, flows.TicketUUID(match[0][1]), typeMailgun)
 	if err != nil {
 		return err, http.StatusBadRequest, nil
 	}
@@ -87,15 +99,19 @@ func handleReceive(ctx context.Context, s *web.Server, r *http.Request, l *model
 	if request.Sender != configuredAddress {
 		body := fmt.Sprintf("The address %s is not allowed to reply to this ticket\n", request.Sender)
 
-		mailgun.send(mailgun.noReplyAddress(), request.From, "Ticket reply rejected", body, nil, l.Ticketer(ticketer))
+		mailgun.send(mailgun.noReplyAddress(), request.From, "Ticket reply rejected", body, nil, nil, l.Ticketer(ticketer))
 
 		return &receiveResponse{Action: "rejected", TicketUUID: ticket.UUID()}, http.StatusOK, nil
 	}
 
+	oa, err := models.GetOrgAssets(ctx, rt.DB, ticket.OrgID())
+	if err != nil {
+		return err, http.StatusBadRequest, nil
+	}
+
 	// check if reply is actually a command
 	if strings.ToLower(strings.TrimSpace(request.StrippedText)) == "close" {
-		org, _ := models.GetOrgAssets(ctx, s.DB, ticket.OrgID())
-		err = models.CloseTickets(ctx, s.DB, org, []*models.Ticket{ticket}, true, l)
+		err = tickets.CloseTicket(ctx, rt, oa, ticket, true, l)
 		if err != nil {
 			return errors.Wrapf(err, "error closing ticket: %s", ticket.UUID()), http.StatusInternalServerError, nil
 		}
@@ -103,16 +119,21 @@ func handleReceive(ctx context.Context, s *web.Server, r *http.Request, l *model
 		return &receiveResponse{Action: "closed", TicketUUID: ticket.UUID()}, http.StatusOK, nil
 	}
 
-	// update our ticket
-	config := map[string]string{
-		ticketConfigLastMessageID: request.MessageID,
-	}
-	err = models.UpdateAndKeepOpenTicket(ctx, s.DB, ticket, config)
+	// update our ticket config
+	err = models.UpdateTicketConfig(ctx, rt.DB, ticket, map[string]string{ticketConfigLastMessageID: request.MessageID})
 	if err != nil {
 		return errors.Wrapf(err, "error updating ticket: %s", ticket.UUID()), http.StatusInternalServerError, nil
 	}
 
-	msg, err := tickets.SendReply(ctx, s.DB, s.RP, ticket, request.StrippedText)
+	// reopen ticket if necessary
+	if ticket.Status() != models.TicketStatusOpen {
+		err = tickets.ReopenTicket(ctx, rt, oa, ticket, false, nil)
+		if err != nil {
+			return errors.Wrapf(err, "error reopening ticket: %s", ticket.UUID()), http.StatusInternalServerError, nil
+		}
+	}
+
+	msg, err := tickets.SendReply(ctx, rt, ticket, request.StrippedText, files)
 	if err != nil {
 		return err, http.StatusInternalServerError, nil
 	}

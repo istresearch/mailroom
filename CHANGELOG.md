@@ -1,3 +1,486 @@
+v6.4.3
+----------
+ * Fix triggering new IVR flow from a simulation resume so that it includes connection to test channel
+
+v6.4.2
+----------
+ * Latest goflow with latest localization
+
+v6.4.1
+----------
+ * Update to latest goflow to get fixes for nulls in webhook responses
+ * Add new error type for failed SQL queries
+
+v6.4.0
+----------
+ * move s3 session config error to a warning for the time being since not strictly required yet
+
+v6.3.31
+----------
+ * Support ticket open events with assignees
+ * Add endpoints for ticket assignment and adding notes
+
+v6.3.30
+----------
+ * Update to latest goflow
+
+v6.3.29
+----------
+ * Include args in BulkQuery error output
+
+v6.3.28
+----------
+ * Return more SQL when BulkQuery errors
+ * Update to latest goflow/gocommon
+
+v6.3.27
+----------
+ * Fix handling of inbox messages to also update open tickets
+
+v6.3.26
+----------
+ * Stop writing broadcast.is_active which is now nullable
+
+v6.3.25
+----------
+ * Update to latest goflow
+
+v6.3.24
+----------
+ * Update to latest goflow
+ * Load org users as assets and use for ticket assignees and manual trigger users
+ * Add ticket to broadcasts and update last_activity_on after creating messages for a broadcast with a ticket
+
+v6.3.23
+----------
+ * Add support for exclusion groups on scheduled triggers
+
+v6.3.22
+----------
+ * Update ticket last_activity_on when opening/closing and for incoming messages
+ * Set contact_id when creating new tickets events
+
+v6.3.21
+----------
+ * Update to latest goflow and which no longer takes default_language
+
+v6.3.20
+----------
+ * Have our session filename lead with timestamp so other objects can exist in contact dirs
+
+v6.3.19
+----------
+ * Parse URL to get path out for sessions
+
+v6.3.18
+----------
+ * Use s3 session prefix when building s3 paths, default to /
+ * Throw error upwards if we have no DB backdown
+ * Read session files from storage when org configured to do so
+
+v6.3.17
+----------
+ * Ignore contact tickets on ticketers which have been deleted
+
+v6.3.16
+----------
+ * Add ticket closed triggers and use to handle close ticket events
+ * Add ticket events and insert when opening/closing/reopening tickets
+
+v6.3.15
+----------
+ * Fix test which modifies org
+ * Update to latest goflow as last release was broken
+
+v6.3.14
+----------
+ * Update to latest goflow
+ * Write sessions to s3 on resumes (optionally)
+ * Add support for exclusion groups on triggers and generalize trigger matching
+
+v6.3.13
+----------
+ * Introduce runtime.Runtime
+ * Simplify testdata functions
+ * Various fixes from linter
+ * Simplify use of test contacts in handler tests
+ * Move test constants out of models package
+ * Remove reduntant resend_msgs task
+
+v6.3.12
+----------
+ * Update to latest goflow (legacy_extra is no longer an issue)
+ * Make Msg.next_attempt nullable
+ * Add web endpoint for msg resends so they can be a synchronous operation
+
+v6.3.11
+----------
+ * Expose open tickets as @contact.tickets
+
+v6.3.9
+----------
+ * Fix queueing of resent messages to courier and improve testing of queueing
+ * Update to latest goflow
+ * Add WA template translation namespace
+
+v6.3.8
+----------
+ * Add task to resend messages
+
+v6.3.7
+----------
+ * Update to latest goflow
+ * Update test database and rename Nexmo to Vonage
+
+v6.3.6
+----------
+ * Update to latest goflow
+
+v6.3.5
+----------
+ * Update to latest goflow
+
+v6.3.4
+----------
+ * Update to latest goflow
+ * Smarter loading for cache misses on org assets
+
+v6.3.3
+----------
+ * Update to latest goflow
+
+v6.3.2
+----------
+ * Simplify caching, keep orgs for 5s, reload everything
+
+v6.3.1
+----------
+ * Update to latest goflow
+
+v6.3.0
+----------
+ * Fail expirations that are no longer the active session
+
+v6.2.3
+----------
+ * Update to latest goflow with completed es and pt-BR translations
+
+v6.2.2
+----------
+ * Update to latest goflow
+
+v6.2.1
+----------
+ * use SaveRequest() so our ivr logs always have bodies
+
+v6.2.0
+----------
+ * 6.2.0 Release Candidate
+
+v6.2.0
+----------
+ * 6.2.0 Release Candidate
+
+v6.1.19 
+----------
+ * Fix campaign even firing for background flows
+ * IVR forwards for Nexmo and Twilio
+
+v6.1.18
+----------
+ * Update to latest goflow
+ * Rename tickets/internal package
+
+v6.1.17
+----------
+ * Should match referral trigger with case insensitive
+
+v6.1.16
+----------
+ * Update to latest goflow
+ * Add link local ips to default disallowed networks config
+
+v6.1.15
+----------
+ * Update phonenumbers lib
+ * Decrease locations cache timeout to 1 minute
+
+v6.1.14
+----------
+ * Support ElasticSearch 7.2 (backwards incompatible to Elastic 6.*)
+
+v6.1.13
+----------
+ * Update to latest goflow
+
+v6.1.12
+----------
+ * Update to latest goflow v0.110.0
+
+v6.1.11
+----------
+ * Update to latest goflow v0.109.4
+
+v6.1.10
+----------
+ * Simplify FCM client code
+ * Fix updating message status when id column is bigint
+ * Ensure courier messages are always queued for a single contact
+ * Fix not triggering FCM syncs for broadcasts and ticket reply messages
+
+v6.1.9
+----------
+ * Update to goflow v0.109.0
+
+v6.1.8
+----------
+ * Update to latest goflow 0.108.0
+
+v6.1.7
+----------
+ * Use background instead of passive
+
+v6.1.6
+----------
+ * Update to latest goflow v0.107.2
+ * Add support for passive flows
+
+v6.1.5
+----------
+ * Update to goflow v0.107.1
+
+v6.1.4
+----------
+ * Variable timeout for fire campaign task
+
+v6.1.3
+----------
+ * Fix misreporting created contacts as updated during imports
+
+v6.1.2
+----------
+ * Ensure field and group assets used for imports are fresh
+ * Add support for internal type ticketers
+
+v6.1.1
+----------
+ * Update to latest goflow v0.106.3
+
+v6.1.0
+----------
+ * Configure engine to disallow HTTP requests to private networks
+
+v6.0.3
+----------
+ * correct name for completion.json in release
+
+v6.0.2
+----------
+ * pin goreleaser, explicit inclusion of /docs/*, completions and functions
+
+v6.0.1
+----------
+ * add log when queuing to courier
+
+v6.0.0
+----------
+ * Update test database
+
+v5.7.44
+----------
+ * Add ticket service for Rocket.Chat
+
+v5.7.43
+----------
+ * Update to latest goflow v0.106.1
+
+v5.7.42
+----------
+ * Prevent importing invalid URNs during import
+
+v5.7.41
+----------
+ * Update to latest goflow v0.106.0
+ * Don't write to flows_flowrun.timeout_on so it can be dropped
+
+v5.7.40
+----------
+ * Update to goflow v0.105.5
+
+v5.7.39
+----------
+ * Fix input_labels_added event handling when session input ID isn't set
+
+v5.7.38
+----------
+ * Always request Mp3 files from Twilio IVR recordings
+
+v5.7.37
+----------
+ * Add support for outgoing mailgun ticket attachments
+
+v5.7.36
+----------
+ * Incoming attachments for mailgun ticketers
+
+v5.7.33
+----------
+ * Update to goflow v0.105.4
+ * Fix cloning of flows during simulation so that ignore keyword triggers is cloned too
+
+v5.7.32
+----------
+ * Update to goflow v0.105.3 to get support for arabic numerals in has_number tests
+
+v5.7.31
+----------
+ * Update to latest goflow to get for normalizing numbers from The Gambia
+ * Enable retrying on the elastic client
+
+v5.7.30
+----------
+ * Reorganization of core packages
+
+v5.7.29
+----------
+ * Fix race condition when bulk getting/creating contacts
+
+v5.7.28
+----------
+ * Add contact/resolve endpoint to assist with channel events still handled in RP
+
+v5.7.27
+----------
+ * If a flow start task creates new contacts, save those back to the start
+
+v5.7.26
+----------
+ * Add mockable DB to enable testing database errors
+ * CreateContact also should do lookup before trying to create new contact with URNs
+ * Imports 2.0
+
+v5.7.25
+----------
+ * Pass org from the base task to task structs to remove need for duplicating it in the task body
+
+v5.7.24
+----------
+ * Add SessionStatus to messages queued to courier
+
+v5.7.23
+----------
+ * Make defining new task types easier and drier
+ * Better locking when handling
+ * Fix and simplify creation of channel logs in IVR handlers
+
+v5.7.22
+----------
+ * Update to latest goflow v0.104.1
+
+v5.7.21
+----------
+ * Simplify test-smtp cmd using smtpx package
+ * Create new dbutil package with generic DB stuff
+ * Add task to calculate fires for new campaign event
+
+v5.7.20
+----------
+ * Fix incoming attachments from Zendesk
+
+v5.7.19
+----------
+ * Update to latest goflow
+ * Empty contact names and languages should be saved as NULL
+ * Delete no longer used utils/celery package
+
+v5.7.18
+----------
+ * Update to latest goflow
+ * Add support for incoming attachments on ticketing services
+
+v5.7.17
+----------
+ * Use status for elastic queries that need to filter out non-active contacts
+
+v5.7.16
+----------
+ * Add support for excluding contacts from searches by ids
+ * Rework utils/storage to be generic and moveable to gocommon
+
+v5.7.15
+----------
+ * Add create contact endpoint which uses modifiers to add fields and groups to contacts
+ * Rework contact creation functions to support creation with multiple URNs
+
+v5.7.14
+----------
+ * Stop writing is_blocked and is_stopped
+
+v5.7.13
+----------
+ * Read from contact.status intead of is_stopped/is_blocked
+ * Implement saving of zendesk ticket files as attachments
+ * Abstract S3 code so tests and dev envs can use file storage
+
+v5.7.12
+----------
+ * Fix inserting channel logs and add test
+
+v5.7.11
+----------
+ * Always write contact.status when writing is_blocked or is_stopped
+ * Convert IVR code to use goflow's httpx package
+
+v5.7.10
+----------
+ * Tweak goreleaser config to include subdirectories inside docs folder
+
+v5.7.9
+----------
+ * Update to goflow v0.101.2
+ * Bundle localized goflow docs in release
+
+v5.7.8
+----------
+ * Recalculate event fires for campaign events based on last_seen_on
+
+v5.7.7
+----------
+ * Update to latest goflow v0.100.0
+
+v5.7.6
+----------
+ * Remove protection for overwriting last_seen_on with older values
+
+v5.7.5
+----------
+ * Update last_seen_on when handling certain channel events
+ * Update last_seen_on when we receive a message from a contact
+
+v5.7.4
+----------
+ * Fail outgoing messages for suspended orgs
+ * Refresh groups as well as fields for contact query parsing
+
+v5.7.3
+----------
+ * Update to goflow v0.99.0
+
+v5.7.2
+----------
+ * Update to latest goflow v0.98.0
+ * Render rich errors with code and extra field
+
+v5.7.1
+----------
+ * Update to latest goflow v0.96.0
+ * Add loop protection by passing session history to new flow action triggers
+
+v5.7.0
+----------
+ * Set user and origin on manual triggers
+ * Switch to trigger builders
+
 v5.6.1
 ----------
  * expire runs that have no session, just warn while doing so

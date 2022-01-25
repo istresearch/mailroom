@@ -1,4 +1,4 @@
-package org
+package org_test
 
 import (
 	"fmt"
@@ -9,20 +9,21 @@ import (
 	"time"
 
 	"github.com/nyaruka/mailroom/config"
-	"github.com/nyaruka/mailroom/models"
 	"github.com/nyaruka/mailroom/testsuite"
+	"github.com/nyaruka/mailroom/testsuite/testdata"
 	"github.com/nyaruka/mailroom/web"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMetrics(t *testing.T) {
-	ctx, db, rp := testsuite.Reset()
+	ctx, _, db, rp := testsuite.Reset()
 
 	promToken := "2d26a50841ff48237238bbdd021150f6a33a4196"
-	db.MustExec(`INSERT INTO api_apitoken(is_active, org_id, created, key, role_id, user_id) VALUES(TRUE, $1, NOW(), $2, 11, 1);`, models.Org1, promToken)
+	db.MustExec(`INSERT INTO api_apitoken(is_active, org_id, created, key, role_id, user_id) VALUES(TRUE, $1, NOW(), $2, 12, 1);`, testdata.Org1.ID, promToken)
 
 	adminToken := "5c26a50841ff48237238bbdd021150f6a33a4199"
-	db.MustExec(`INSERT INTO api_apitoken(is_active, org_id, created, key, role_id, user_id) VALUES(TRUE, $1, NOW(), $2, 8, 1);`, models.Org1, adminToken)
+	db.MustExec(`INSERT INTO api_apitoken(is_active, org_id, created, key, role_id, user_id) VALUES(TRUE, $1, NOW(), $2, 8, 1);`, testdata.Org1.ID, adminToken)
 
 	wg := &sync.WaitGroup{}
 	server := web.NewServer(ctx, config.Mailroom, db, rp, nil, nil, wg)
@@ -33,63 +34,74 @@ func TestMetrics(t *testing.T) {
 	defer server.Stop()
 
 	tcs := []struct {
+		Label    string
 		URL      string
 		Username string
 		Password string
+		Response string
 		Contains []string
 	}{
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org1UUID),
+			Label:    "no username",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org1.UUID),
 			Username: "",
 			Password: "",
-			Contains: []string{`{"error": "invalid authentication"}`},
+			Response: `{"error": "invalid authentication"}`,
 		},
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org1UUID),
+			Label:    "invalid password",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org1.UUID),
 			Username: "metrics",
 			Password: "invalid",
-			Contains: []string{`{"error": "invalid authentication"}`},
+			Response: `{"error": "invalid authentication"}`,
 		},
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org1UUID),
+			Label:    "invalid username",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org1.UUID),
 			Username: "invalid",
 			Password: promToken,
-			Contains: []string{`{"error": "invalid authentication"}`},
+			Response: `{"error": "invalid authentication"}`,
 		},
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org2UUID),
+			Label:    "valid login, wrong org",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org2.UUID),
 			Username: "metrics",
 			Password: promToken,
-			Contains: []string{`{"error": "invalid authentication"}`},
+			Response: `{"error": "invalid authentication"}`,
 		},
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org1UUID),
+			Label:    "valid login, invalid user",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org1.UUID),
 			Username: "metrics",
 			Password: adminToken,
-			Contains: []string{`{"error": "invalid authentication"}`},
+			Response: `{"error": "invalid authentication"}`,
 		},
 		{
-			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", models.Org1UUID),
+			Label:    "valid",
+			URL:      fmt.Sprintf("http://localhost:8090/mr/org/%s/metrics", testdata.Org1.UUID),
 			Username: "metrics",
 			Password: promToken,
 			Contains: []string{
-				`rapidpro_group_contact_count{group_name="All Contacts",group_uuid="d1ee73f0-bdb5-47ce-99dd-0c95d4ebf008",group_type="system",org="UNICEF"} 124`,
+				`rapidpro_group_contact_count{group_name="Active",group_uuid="14f6ea01-456b-4417-b0b8-35e942f549f1",group_type="system",org="UNICEF"} 124`,
 				`rapidpro_group_contact_count{group_name="Doctors",group_uuid="c153e265-f7c9-4539-9dbc-9b358714b638",group_type="user",org="UNICEF"} 121`,
-				`rapidpro_channel_msg_count{channel_name="Nexmo",channel_uuid="19012bfd-3ce3-4cae-9bb9-76cf92c73d49",channel_type="NX",msg_direction="out",msg_type="message",org="UNICEF"} 0`,
+				`rapidpro_channel_msg_count{channel_name="Vonage",channel_uuid="19012bfd-3ce3-4cae-9bb9-76cf92c73d49",channel_type="NX",msg_direction="out",msg_type="message",org="UNICEF"} 0`,
 			},
 		},
 	}
 
-	for i, tc := range tcs {
+	for _, tc := range tcs {
 		req, _ := http.NewRequest(http.MethodGet, tc.URL, nil)
 		req.SetBasicAuth(tc.Username, tc.Password)
 		resp, err := http.DefaultClient.Do(req)
-		assert.NoError(t, err, "%d received error")
+		assert.NoError(t, err, "%s: received error", tc.Label)
 
 		body, _ := ioutil.ReadAll(resp.Body)
 
+		if tc.Response != "" {
+			assert.Equal(t, tc.Response, string(body), "%s: response mismatch", tc.Label)
+		}
 		for _, contains := range tc.Contains {
-			assert.Contains(t, string(body), contains, "%d does not contain: %s", i, contains)
+			assert.Contains(t, string(body), contains, "%s: does not contain: %s", tc.Label, contains)
 		}
 	}
 }
