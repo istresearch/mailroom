@@ -1,51 +1,164 @@
 version: 2
 
 jobs:
-  build:
+  pre-build:
     docker:
       - image: cimg/base:stable
-
     steps:
       - checkout
       - setup_remote_docker:
           version: 20.10.7
-
       - run:
-          name: "Build and push Docker image"
-          command: |
-            IMAGE_NAME=istresearch/mailroom
+          name: "Determine Tag To Use"
+          command: |-
             BRANCH=${CIRCLE_BRANCH#*/}
+            DEVELOP_BRANCH=develop       
             VERSION=`cat VERSION`
 
             # tagged release
             if [[ ! -z $CIRCLE_TAG ]]; then
-              VERSION_TAG="${VERSION}"
-            elif [[ $BRANCH == "develop" ]]; then
-              VERSION_TAG="${VERSION}-dev"
+              VERSION_TAG="${CIRCLE_TAG#*v}"
+            
+            # on develop branch
+            elif [[ $BRANCH == $DEVELOP_BRANCH ]]; then
+              VERSION_TAG="ci-develop"
+            
+            # non standard branch, tag as ci
             else
-              VERSION_TAG="ci-${VERSION}-dev-${BRANCH}"
+              VERSION_TAG="ci-${VERSION%-dev}-dev-${BRANCH#dev-}"
             fi
+            
+            echo ${VERSION_TAG} > version_tag.txt
+      - persist_to_workspace:
+          root: .
+          paths: .
+
+  build-amd64:
+    machine:
+      image: ubuntu-2004:202111-02
+    resource_class: medium
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Build and push Docker image (amd64)"
+          command: |-
+            IMAGE_NAME=${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+            IMAGE_TAG=`cat version_tag.txt`-amd64
 
             docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
-            docker build --build-arg BUILD_NUMBER=$CIRCLE_BUILD_NUM -t $IMAGE_NAME:$VERSION_TAG -f Dockerfile .
-            docker push $IMAGE_NAME:$VERSION_TAG
+            echo "Building Docker container ${IMAGE_NAME}:${IMAGE_TAG}…"
+            docker build --progress=plain \
+              -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile . \
+              --build-arg "BUILD_NUMBER=${CIRCLE_BUILD_NUM}" \
+              --build-arg "ARCH=${IMAGE_TAG##*-}/"
+            docker push "${IMAGE_NAME}:${IMAGE_TAG}"
 
-            if [[ $BRANCH == "develop" ]]; then
-              docker tag $IMAGE_NAME:$VERSION_TAG $IMAGE_NAME:ci-develop
-              docker push $IMAGE_NAME:ci-develop
-              echo "No deploy yet"
-              # Autodeploy magic here
-            else
-              echo "Skipping ci-develop tag"
-            fi
+  build-arm64:
+    machine:
+      image: ubuntu-2004:202111-02
+    resource_class: arm.medium
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: "Build and push Docker image (arm64)"
+          command: |-
+            IMAGE_NAME=${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+            IMAGE_TAG=`cat version_tag.txt`-arm64
+
+            docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
+            echo "Building Docker container ${IMAGE_NAME}:${IMAGE_TAG}…"
+            docker build --progress=plain \
+              -t ${IMAGE_NAME}:${IMAGE_TAG} -f Dockerfile . \
+              --build-arg "BUILD_NUMBER=${CIRCLE_BUILD_NUM}" \
+              --build-arg "ARCH=${IMAGE_TAG##*-}/"
+            docker push "${IMAGE_NAME}:${IMAGE_TAG}"
+
+  create-manifest:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker:
+          version: 20.10.7
+      - run:
+          name: "Create and Push Docker Manifest"
+          command: |-
+            IMAGE_NAME=${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+            IMAGE_TAG=`cat version_tag.txt`
+
+            docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}"
+            echo "Creating Docker manifest for ${IMAGE_NAME}:${IMAGE_TAG}…"
+            docker manifest create "${IMAGE_NAME}:${IMAGE_TAG}" \
+              --amend "${IMAGE_NAME}:${IMAGE_TAG}-amd64" \
+              --amend "${IMAGE_NAME}:${IMAGE_TAG}-arm64"
+            docker manifest push "${IMAGE_NAME}:${IMAGE_TAG}"
+
+  deploy-dev-container:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Avoid "Are you sure you want to connect?" to GitHub
+          command: |-
+            mkdir -p ~/.ssh
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+            chmod 600 ~/.ssh/known_hosts
+      - run:
+          name: Deploy To K8s
+          command: |
+            #TODO: figure out how to deploy part of the engage stack
+            IMAGE_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+            IMAGE_TAG=`cat version_tag.txt`
+            K8_URL=https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/p4-deploy/tree/develop
+            echo "Deploy to K8s: ${IMAGE_NAME}:${IMAGE_TAG}"
+            curl -XPOST --user "${oCI_API_TOKEN}:" \
+              --data build_parameters[CIRCLE_JOB]=eks_deploy \
+              --data build_parameters[DEPLOY_PROJECT]=??? \
+              --data build_parameters[DEPLOY_IMAGE]=${IMAGE_NAME}:${IMAGE_TAG} \
+              $K8_URL
 
 
 workflows:
   version: 2
-  mailroom:
+  mailroom-pipeline:
     jobs:
-      - build:
+      - pre-build:
           context: globalconfig
-          filters:
+          filters: &build-filters
+            branches:
+              ignore:
+                - main
+                - master
             tags:
-              ignore: /^test-.*/
+              only:
+                - /^v\d.*/
+      - build-amd64:
+          context: globalconfig
+          requires:
+            - pre-build
+          filters: *build-filters
+      - build-arm64:
+          context: globalconfig
+          requires:
+            - pre-build
+          filters: *build-filters
+      - create-manifest:
+          context: globalconfig
+          requires:
+            - build-amd64
+            - build-arm64
+          filters: *build-filters
+#      - deploy-dev-container:
+#          context: globalconfig
+#          requires:
+#            - create-manifest
+#          filters:
+#            branches:
+#              only:
+#                - develop
+#                - /^dev[-\/].*$/
