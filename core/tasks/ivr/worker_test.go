@@ -78,6 +78,10 @@ type MockClient struct {
 	callError error
 }
 
+func (c *MockClient) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	return models.MTMissEventType, 0
+}
+
 func (c *MockClient) RequestCall(number urns.URN, handleURL string, statusURL string) (ivr.CallID, *httpx.Trace, error) {
 	return c.callID, nil, c.callError
 }
