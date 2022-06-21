@@ -153,10 +153,10 @@ func FindMatchingIncomingCallTrigger(oa *OrgAssets, contact *flows.Contact) *Tri
 }
 
 // FindMatchingMissedCallTrigger finds the best match trigger for missed incoming calls
-func FindMatchingMissedCallTrigger(oa *OrgAssets) *Trigger {
+func FindMatchingMissedCallTrigger(oa *OrgAssets, contact *flows.Contact) *Trigger {
 	candidates := findTriggerCandidates(oa, MissedCallTriggerType, nil)
 
-	return findBestTriggerMatch(candidates, nil, nil)
+	return findBestTriggerMatch(candidates, nil, contact)
 }
 
 // FindMatchingNewConversationTrigger finds the best match trigger for new conversation channel events
@@ -198,8 +198,19 @@ func findTriggerCandidates(oa *OrgAssets, type_ TriggerType, filter func(*Trigge
 	candidates := make([]*Trigger, 0, 10)
 
 	for _, t := range oa.Triggers() {
+		//logrus.WithField("type_", type_).
+		//	WithField("trigtype", t.TriggerType()).
+		//	WithField("is_filter_nil", (filter == nil)).
+		//	WithField("filter_result", (filter == nil || filter(t))).
+		//	Debug("[TRACE] findTrig")
 		if t.TriggerType() == type_ && (filter == nil || filter(t)) {
 			candidates = append(candidates, t)
+			//logrus.WithField("t.id", t.ID()).
+			//	WithField("t.flow_id", t.FlowID()).
+			//	WithField("t.chan_id", t.ChannelID()).
+			//	WithField("t.grp_ids", t.IncludeGroupIDs()).
+			//	WithField("t.trigtyp", t.TriggerType()).
+			//	Debug("[TRACE] foundTrig")
 		}
 	}
 
