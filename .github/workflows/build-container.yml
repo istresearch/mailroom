@@ -1,4 +1,4 @@
-ame: build-container
+name: build-container
 
 on:
   push:
