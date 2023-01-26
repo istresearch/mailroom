@@ -53,7 +53,7 @@ jobs:
       SLACK_DEPLOY_MESSAGE:
     steps:
       - name: Deploy To K8s
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
           repository: istresearch/p4-deploy
