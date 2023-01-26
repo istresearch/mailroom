@@ -52,12 +52,12 @@ jobs:
       IMAGE_TAG: ${{ needs.build_cfg.outputs.VERSION_TAG }}
       SLACK_DEPLOY_MESSAGE:
     steps:
-      - name: Deploy To K8s
+      - name: Trigger Container Build
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
-          repository: istresearch/p4-deploy
-          event-type: trigger-k8s-deploy
+          repository: istresearch/rp-docker
+          event-type: trigger-build-repo
           client-payload: |-
             {
               "repo": "${{ github.repository }}",
