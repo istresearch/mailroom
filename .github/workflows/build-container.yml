@@ -1,0 +1,72 @@
+ame: build-container
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build_cfg:
+    runs-on: ubuntu-20.04
+    environment: default
+    outputs:
+      VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
+      REPO_BRANCH: ${{ steps.config_step.outputs.REPO_BRANCH }}
+      REPO_TAG: ${{ steps.config_step.outputs.REPO_TAG }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Determine Tag To Use"
+        id: config_step
+        run: |-
+          VERSION_STR=`cat VERSION`          
+          echo "::notice::Version STR=${VERSION_STR}"
+          echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
+          
+          if [[ ${{ github.ref_type }} == 'tag' ]]; then
+            REPO_BRANCH=
+            REPO_TAG=${{ github.ref_name }}
+          else
+            REPO_BRANCH=${{ github.ref_name }}
+            REPO_TAG=
+          fi
+          echo "::notice::Repo Branch=${REPO_BRANCH}"
+          echo "REPO_BRANCH=${REPO_BRANCH}" >> $GITHUB_OUTPUT
+          echo "::notice::Repo Tag=${REPO_TAG}"
+          echo "REPO_TAG=${REPO_TAG}" >> $GITHUB_OUTPUT
+  #endjob build_cfg
+
+  trigger-build:
+    runs-on: ubuntu-20.04
+    needs: [build_cfg]
+    environment: default
+    env:
+      DEPLOY_PROJECT: pulse-engage-mailroom
+      DEPLOY_CONTAINER: mailroom
+      IMAGE_TAG: ${{ needs.build_cfg.outputs.VERSION_TAG }}
+      SLACK_DEPLOY_MESSAGE:
+    steps:
+      - name: Deploy To K8s
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.CI_WEBHOOK_TOKEN }}
+          repository: istresearch/p4-deploy
+          event-type: trigger-k8s-deploy
+          client-payload: |-
+            {
+              "repo": "${{ github.repository }}",
+              "branch": "${{ needs.build_cfg.outputs.REPO_BRANCH }}",
+              "tag": "${{ needs.build_cfg.outputs.REPO_TAG }}",
+              "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
+              "dockerfile": "Dockerfile",
+              "container_name": "${{ github.repository }}",
+              "deploy_project": "${{ env.DEPLOY_PROJECT }}",
+              "deploy_container": "${{ env.DEPLOY_CONTAINER }}"
+            }
+  #endjob trigger-build
