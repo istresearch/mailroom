@@ -47,10 +47,9 @@ jobs:
     needs: [build_cfg]
     environment: default
     env:
-      DEPLOY_PROJECT: pulse-engage-mailroom
-      DEPLOY_CONTAINER: mailroom
-      IMAGE_TAG: ${{ needs.build_cfg.outputs.VERSION_TAG }}
-      SLACK_DEPLOY_MESSAGE:
+      K8S_PROJECT: pulse-engage-mailroom
+      K8S_CONTAINER: mailroom
+      SLACK_DEPLOY_MSG:
     steps:
       - name: Trigger Container Build
         uses: peter-evans/repository-dispatch@v2
@@ -66,7 +65,8 @@ jobs:
               "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
               "dockerfile": "Dockerfile",
               "container_name": "${{ github.repository }}",
-              "deploy_project": "${{ env.DEPLOY_PROJECT }}",
-              "deploy_container": "${{ env.DEPLOY_CONTAINER }}"
+              "k8s_project": "${{ env.K8S_PROJECT }}",
+              "k8s_container": "${{ env.K8S_CONTAINER }}",
+              "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}",
             }
   #endjob trigger-build
