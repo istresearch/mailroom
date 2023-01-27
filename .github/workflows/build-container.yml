@@ -67,6 +67,6 @@ jobs:
               "container_name": "${{ github.repository }}",
               "k8s_project": "${{ env.K8S_PROJECT }}",
               "k8s_container": "${{ env.K8S_CONTAINER }}",
-              "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}",
+              "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
             }
   #endjob trigger-build
