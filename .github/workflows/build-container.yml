@@ -55,8 +55,8 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
-          repository: istresearch/rp-docker
-          event-type: trigger-build-repo
+          repository: istresearch/ci-docker
+          event-type: build-repo-dev-deploy
           client-payload: |-
             {
               "repo": "${{ github.repository }}",
@@ -65,8 +65,10 @@ jobs:
               "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
               "dockerfile": "Dockerfile",
               "container_name": "${{ github.repository }}",
-              "k8s_project": "${{ env.K8S_PROJECT }}",
-              "k8s_container": "${{ env.K8S_CONTAINER }}",
-              "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
+              "deployment": {
+                "k8s_project": "${{ env.K8S_PROJECT }}",
+                "k8s_container": "${{ env.K8S_CONTAINER }}",
+                "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
+              }
             }
   #endjob trigger-build
