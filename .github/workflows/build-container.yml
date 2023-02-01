@@ -7,13 +7,10 @@ on:
       - master
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - '*'
 
 jobs:
   build_cfg:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     environment: default
     outputs:
       VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
@@ -43,7 +40,7 @@ jobs:
   #endjob build_cfg
 
   trigger-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [build_cfg]
     environment: default
     env:
@@ -56,15 +53,21 @@ jobs:
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
           repository: istresearch/ci-docker
-          event-type: build-repo-dev-deploy
+          event-type: build-repo
           client-payload: |-
             {
-              "repo": "${{ github.repository }}",
-              "branch": "${{ needs.build_cfg.outputs.REPO_BRANCH }}",
-              "tag": "${{ needs.build_cfg.outputs.REPO_TAG }}",
-              "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
-              "dockerfile": "Dockerfile",
-              "container_name": "${{ github.repository }}",
+              "repo": {
+                "name": "${{ github.repository }}",
+                "branch": "${{ needs.build_cfg.outputs.REPO_BRANCH }}",
+                "tag": "${{ needs.build_cfg.outputs.REPO_TAG }}"
+              },
+              "image": {
+                "dockerfile": "Dockerfile",
+                "name": "${{ github.repository }}",
+                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}",
+                "build_args": [
+                ]
+              },
               "deployment": {
                 "k8s_project": "${{ env.K8S_PROJECT }}",
                 "k8s_container": "${{ env.K8S_CONTAINER }}",
