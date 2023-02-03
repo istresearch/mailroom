@@ -1,0 +1,27 @@
+name: Display Build Conclusions
+
+on:
+  repository_dispatch:
+    types:
+      - build_image_result
+      - build_image_error
+
+jobs:
+  build_success:
+    if: github.event.client_payload.error_msg == ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display Msg
+        run: |-
+          echo "::notice::${{ github.event.client_payload.name }} image built with tag [${{ github.event.client_payload.tag }}]"
+  #endjob build_success
+
+  build_error:
+    if: github.event.client_payload.error_msg != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display Msg
+        run: |-
+          echo "${{ github.event.client_payload.error_msg }}"
+          exit 1
+  #endjob build_error

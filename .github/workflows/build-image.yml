@@ -14,29 +14,15 @@ jobs:
     environment: default
     outputs:
       VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
-      REPO_BRANCH: ${{ steps.config_step.outputs.REPO_BRANCH }}
-      REPO_TAG: ${{ steps.config_step.outputs.REPO_TAG }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: "Determine Tag To Use"
+      - name: "Determine Version"
         id: config_step
         run: |-
           VERSION_STR=`cat VERSION`          
           echo "::notice::Version STR=${VERSION_STR}"
           echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
-          
-          if [[ ${{ github.ref_type }} == 'tag' ]]; then
-            REPO_BRANCH=
-            REPO_TAG=${{ github.ref_name }}
-          else
-            REPO_BRANCH=${{ github.ref_name }}
-            REPO_TAG=
-          fi
-          echo "::notice::Repo Branch=${REPO_BRANCH}"
-          echo "REPO_BRANCH=${REPO_BRANCH}" >> $GITHUB_OUTPUT
-          echo "::notice::Repo Tag=${REPO_TAG}"
-          echo "REPO_TAG=${REPO_TAG}" >> $GITHUB_OUTPUT
   #endjob build_cfg
 
   trigger-build:
@@ -48,7 +34,7 @@ jobs:
       K8S_CONTAINER: mailroom
       SLACK_DEPLOY_MSG:
     steps:
-      - name: Trigger Container Build
+      - name: "Trigger Container Build"
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
@@ -58,20 +44,26 @@ jobs:
             {
               "repo": {
                 "name": "${{ github.repository }}",
-                "branch": "${{ needs.build_cfg.outputs.REPO_BRANCH }}",
-                "tag": "${{ needs.build_cfg.outputs.REPO_TAG }}"
+                "ref_type": "${{ github.ref_type }}",
+                "ref_name": "${{ github.ref_name }}"
               },
               "image": {
                 "dockerfile": "Dockerfile",
                 "name": "${{ github.repository }}",
-                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}",
+                "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
                 "build_args": [
                 ]
               },
               "deployment": {
+                "deploy_flag": "${{ github.ref_type == 'branch' }}",
                 "k8s_project": "${{ env.K8S_PROJECT }}",
                 "k8s_container": "${{ env.K8S_CONTAINER }}",
                 "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
+              },
+              "callback": {
+                "repository": "${{ github.repository }}",
+                "event_type": "build_image_result",
+                "error_type": "build_image_error"
               }
             }
   #endjob trigger-build
