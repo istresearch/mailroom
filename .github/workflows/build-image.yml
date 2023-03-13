@@ -1,4 +1,4 @@
-name: build-container
+name: build image
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
       - name: "Determine Version"
         id: config_step
         run: |-
-          VERSION_STR=`cat VERSION`          
+          VERSION_STR=$(cat VERSION)
           echo "::notice::Version STR=${VERSION_STR}"
           echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
   #endjob build_cfg
@@ -49,6 +49,7 @@ jobs:
               },
               "image": {
                 "dockerfile": "Dockerfile",
+                "arch_allowed": "amd64 arm64",
                 "name": "${{ github.repository }}",
                 "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
                 "build_args": [
