@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gomodule/redigo/redis"
+	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/gocommon/httpx"
 	"github.com/nyaruka/gocommon/urns"
 	"github.com/nyaruka/goflow/envs"
@@ -23,12 +25,8 @@ import (
 	"github.com/nyaruka/goflow/flows/routers/waits"
 	"github.com/nyaruka/goflow/flows/routers/waits/hints"
 	"github.com/nyaruka/goflow/utils"
-	"github.com/nyaruka/mailroom/config"
 	"github.com/nyaruka/mailroom/core/ivr"
 	"github.com/nyaruka/mailroom/core/models"
-
-	"github.com/gomodule/redigo/redis"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

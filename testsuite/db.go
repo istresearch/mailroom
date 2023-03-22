@@ -38,7 +38,7 @@ func (d *MockDB) check(funcName string) error {
 }
 
 func (d *MockDB) Rebind(query string) string {
-	return d.Rebind(query)
+	return d.real.Rebind(query)
 }
 
 func (d *MockDB) QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error) {
@@ -60,6 +60,13 @@ func (d *MockDB) NamedExecContext(ctx context.Context, query string, arg interfa
 		return nil, err
 	}
 	return d.real.NamedExecContext(ctx, query, arg)
+}
+
+func (d *MockDB) SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error {
+	if err := d.check("SelectContext"); err != nil {
+		return err
+	}
+	return d.real.SelectContext(ctx, dest, query, args...)
 }
 
 func (d *MockDB) GetContext(ctx context.Context, value interface{}, query string, args ...interface{}) error {

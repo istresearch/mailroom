@@ -12,7 +12,6 @@ import (
 	"github.com/nyaruka/goflow/flows/routers/waits"
 	"github.com/nyaruka/goflow/flows/routers/waits/hints"
 	"github.com/nyaruka/goflow/utils"
-	"github.com/nyaruka/mailroom/config"
 	"github.com/nyaruka/mailroom/core/models"
 	"github.com/nyaruka/mailroom/testsuite"
 	"github.com/nyaruka/mailroom/testsuite/testdata"

@@ -3,34 +3,40 @@ package mailroom
 import (
 	"context"
 	"fmt"
-	"github.com/nyaruka/gocommon/urns"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/nyaruka/gocommon/analytics"
 	"github.com/nyaruka/gocommon/storage"
-	"github.com/nyaruka/mailroom/config"
 	"github.com/nyaruka/mailroom/core/queue"
 	"github.com/nyaruka/mailroom/runtime"
+	"github.com/nyaruka/mailroom/utils/cron"
 	"github.com/nyaruka/mailroom/web"
+	"github.com/pkg/errors"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
-	"github.com/nyaruka/librato"
 	"github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 )
 
 // InitFunction is a function that will be called when mailroom starts
-type InitFunction func(runtime *runtime.Runtime, wg *sync.WaitGroup, quit chan bool) error
+type InitFunction func(*runtime.Runtime, *sync.WaitGroup, chan bool) error
 
 var initFunctions = make([]InitFunction, 0)
 
-// AddInitFunction adds an init function that will be called on startup
-func AddInitFunction(initFunc InitFunction) {
+func addInitFunction(initFunc InitFunction) {
 	initFunctions = append(initFunctions, initFunc)
+}
+
+// RegisterCron registers a new cron function to run every interval
+func RegisterCron(name string, interval time.Duration, allInstances bool, fn cron.Function) {
+	addInitFunction(func(rt *runtime.Runtime, wg *sync.WaitGroup, quit chan bool) error {
+		cron.Start(rt, wg, name, interval, allInstances, fn, time.Minute*5, quit)
+		return nil
+	})
 }
 
 // TaskFunction is the function that will be called for a type of task
@@ -59,7 +65,7 @@ type Mailroom struct {
 }
 
 // NewMailroom creates and returns a new mailroom instance
-func NewMailroom(config *config.Config) *Mailroom {
+func NewMailroom(config *runtime.Config) *Mailroom {
 	mr := &Mailroom{
 		rt:   &runtime.Runtime{Config: config},
 		quit: make(chan bool),
@@ -76,83 +82,30 @@ func NewMailroom(config *config.Config) *Mailroom {
 func (mr *Mailroom) Start() error {
 	c := mr.rt.Config
 
-	log := logrus.WithFields(logrus.Fields{
-		"state": "starting",
-	})
+	log := logrus.WithFields(logrus.Fields{"state": "starting"})
 
-	// parse and test our db config
-	dbURL, err := url.Parse(c.DB)
+	var err error
+	mr.rt.DB, err = openAndCheckDBConnection(c.DB, c.DBPoolSize)
 	if err != nil {
-		return fmt.Errorf("unable to parse DB URL '%s': %s", c.DB, err)
-	}
-
-	if dbURL.Scheme != "postgres" {
-		return fmt.Errorf("invalid DB URL: '%s', only postgres is supported", c.DB)
-	}
-
-	// build our db
-	db, err := sqlx.Open("postgres", c.DB)
-	if err != nil {
-		return fmt.Errorf("unable to open DB with config: '%s': %s", c.DB, err)
-	}
-
-	// configure our pool
-	db.SetMaxIdleConns(8)
-	db.SetMaxOpenConns(c.DBPoolSize)
-	db.SetConnMaxLifetime(time.Minute * 30)
-	db.SetConnMaxIdleTime(time.Minute * 10)
-	mr.rt.DB = db
-
-	// try connecting
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	err = db.PingContext(ctx)
-	cancel()
-	if err != nil {
-		log.Error("db not reachable")
+		log.WithError(err).Error("db not reachable")
 	} else {
 		log.Info("db ok")
 	}
 
-	// parse and test our redis config
-	redisURL, err := url.Parse(mr.rt.Config.Redis)
-	if err != nil {
-		return fmt.Errorf("unable to parse Redis URL '%s': %s", c.Redis, err)
+	if c.ReadonlyDB != "" {
+		mr.rt.ReadonlyDB, err = openAndCheckDBConnection(c.ReadonlyDB, c.DBPoolSize)
+		if err != nil {
+			log.WithError(err).Error("readonly db not reachable")
+		} else {
+			log.Info("readonly db ok")
+		}
+	} else {
+		// if readonly DB not specified, just use default DB again
+		mr.rt.ReadonlyDB = mr.rt.DB
+		log.Warn("no distinct readonly db configured")
 	}
 
-	// create our pool
-	redisPool := &redis.Pool{
-		Wait:        true,              // makes callers wait for a connection
-		MaxActive:   36,                // only open this many concurrent connections at once
-		MaxIdle:     4,                 // only keep up to this many idle
-		IdleTimeout: 240 * time.Second, // how long to wait before reaping a connection
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", redisURL.Host)
-			if err != nil {
-				return nil, err
-			}
-
-			// send auth if required
-			if redisURL.User != nil {
-				pass, authRequired := redisURL.User.Password()
-				if authRequired {
-					if _, err := conn.Do("AUTH", pass); err != nil {
-						conn.Close()
-						return nil, err
-					}
-				}
-			}
-
-			// switch to the right DB
-			_, err = conn.Do("SELECT", strings.TrimLeft(redisURL.Path, "/"))
-			return conn, err
-		},
-	}
-	mr.rt.RP = redisPool
-
-	// test our redis connection
-	conn := redisPool.Get()
-	defer conn.Close()
-	_, err = conn.Do("PING")
+	mr.rt.RP, err = openAndCheckRedisPool(c.Redis)
 	if err != nil {
 		log.WithError(err).Error("redis not reachable")
 	} else {
@@ -168,19 +121,20 @@ func (mr *Mailroom) Start() error {
 			Region:             c.S3Region,
 			DisableSSL:         c.S3DisableSSL,
 			ForcePathStyle:     c.S3ForcePathStyle,
+			MaxRetries:         3,
 		})
 		if err != nil {
 			return err
 		}
-		mr.rt.MediaStorage = storage.NewS3(s3Client, mr.rt.Config.S3MediaBucket, 32)
-		mr.rt.SessionStorage = storage.NewS3(s3Client, mr.rt.Config.S3SessionBucket, 32)
+		mr.rt.MediaStorage = storage.NewS3(s3Client, mr.rt.Config.S3MediaBucket, c.S3Region, 32)
+		mr.rt.SessionStorage = storage.NewS3(s3Client, mr.rt.Config.S3SessionBucket, c.S3Region, 32)
 	} else {
 		mr.rt.MediaStorage = storage.NewFS("_storage")
 		mr.rt.SessionStorage = storage.NewFS("_storage")
 	}
 
 	// test our media storage
-	ctx, cancel = context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	err = mr.rt.MediaStorage.Test(ctx)
 	cancel()
 
@@ -210,7 +164,7 @@ func (mr *Mailroom) Start() error {
 
 	// warn if we won't be doing FCM syncing
 	if c.FCMKey == "" {
-		logrus.Error("fcm not configured, no syncing of android channels")
+		logrus.Warn("fcm not configured, no syncing of android channels")
 	}
 
 	for _, initFunc := range initFunctions {
@@ -219,25 +173,25 @@ func (mr *Mailroom) Start() error {
 
 	// if we have a librato token, configure it
 	if c.LibratoToken != "" {
-		host, _ := os.Hostname()
-		librato.Configure(c.LibratoUsername, c.LibratoToken, host, time.Second, mr.wg)
-		librato.Start()
+		analytics.RegisterBackend(analytics.NewLibrato(c.LibratoUsername, c.LibratoToken, c.InstanceName, time.Second, mr.wg))
 	}
+
+	analytics.Start()
 
 	// init our foremen and start it
 	mr.batchForeman.Start()
 	mr.handlerForeman.Start()
 
 	// start our web server
-	mr.webserver = web.NewServer(mr.ctx, c, mr.rt.DB, mr.rt.RP, mr.rt.MediaStorage, mr.rt.ES, mr.wg)
+	mr.webserver = web.NewServer(mr.ctx, mr.rt, mr.wg)
 	mr.webserver.Start()
 
 	//handle custom schemes
-	for _,v := range strings.Split(c.CustomSchemes, ",") {
+	for _, v := range strings.Split(c.CustomSchemes, ",") {
 		urns.ValidSchemes[strings.Trim(v, " ")] = true
 	}
 
-	logrus.Info("mailroom started")
+	logrus.WithField("domain", c.Domain).Info("mailroom started")
 
 	return nil
 }
@@ -247,7 +201,7 @@ func (mr *Mailroom) Stop() error {
 	logrus.Info("mailroom stopping")
 	mr.batchForeman.Stop()
 	mr.handlerForeman.Stop()
-	librato.Stop()
+	analytics.Stop()
 	close(mr.quit)
 	mr.cancel()
 
@@ -255,9 +209,73 @@ func (mr *Mailroom) Stop() error {
 	mr.webserver.Stop()
 
 	mr.wg.Wait()
-	mr.rt.ES.Stop()
+
+	// stop ES client if we have one
+	if mr.rt.ES != nil {
+		mr.rt.ES.Stop()
+	}
+
 	logrus.Info("mailroom stopped")
 	return nil
+}
+
+func openAndCheckDBConnection(url string, maxOpenConns int) (*sqlx.DB, error) {
+	db, err := sqlx.Open("postgres", url)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to open database connection: '%s'", url)
+	}
+
+	// configure our pool
+	db.SetMaxIdleConns(8)
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetConnMaxLifetime(time.Minute * 30)
+	db.SetConnMaxIdleTime(time.Minute * 10)
+
+	// ping database...
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	err = db.PingContext(ctx)
+	cancel()
+
+	return db, err
+}
+
+func openAndCheckRedisPool(redisUrl string) (*redis.Pool, error) {
+	redisURL, _ := url.Parse(redisUrl)
+
+	rp := &redis.Pool{
+		Wait:        true,              // makes callers wait for a connection
+		MaxActive:   36,                // only open this many concurrent connections at once
+		MaxIdle:     4,                 // only keep up to this many idle
+		IdleTimeout: 240 * time.Second, // how long to wait before reaping a connection
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.Dial("tcp", redisURL.Host)
+			if err != nil {
+				return nil, err
+			}
+
+			// send auth if required
+			if redisURL.User != nil {
+				pass, authRequired := redisURL.User.Password()
+				if authRequired {
+					if _, err := conn.Do("AUTH", pass); err != nil {
+						conn.Close()
+						return nil, err
+					}
+				}
+			}
+
+			// switch to the right DB
+			_, err = conn.Do("SELECT", strings.TrimLeft(redisURL.Path, "/"))
+			return conn, err
+		},
+	}
+
+	// test the connection
+	conn := rp.Get()
+	defer conn.Close()
+	_, err := conn.Do("PING")
+
+	return rp, err
 }
 
 func newElasticClient(url string) (*elastic.Client, error) {

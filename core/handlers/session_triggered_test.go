@@ -19,11 +19,11 @@ import (
 )
 
 func TestSessionTriggered(t *testing.T) {
-	ctx, _, db, _ := testsuite.Get()
+	ctx, rt, _, _ := testsuite.Get()
 
-	defer testsuite.Reset()
+	defer testsuite.Reset(testsuite.ResetAll)
 
-	oa, err := models.GetOrgAssets(ctx, db, testdata.Org1.ID)
+	oa, err := models.GetOrgAssets(ctx, rt, testdata.Org1.ID)
 	assert.NoError(t, err)
 
 	simpleFlow, err := oa.FlowByID(testdata.SingleMessage.ID)
@@ -44,12 +44,12 @@ func TestSessionTriggered(t *testing.T) {
 		{
 			Actions: handlers.ContactActionMap{
 				testdata.Cathy: []flows.Action{
-					actions.NewStartSession(handlers.NewActionUUID(), simpleFlow.FlowReference(), nil, []*flows.ContactReference{contactRef}, []*assets.GroupReference{groupRef}, nil, true),
+					actions.NewStartSession(handlers.NewActionUUID(), simpleFlow.Reference(), nil, []*flows.ContactReference{contactRef}, []*assets.GroupReference{groupRef}, nil, true),
 				},
 			},
 			SQLAssertions: []handlers.SQLAssertion{
 				{
-					SQL:   "select count(*) from flows_flowrun where contact_id = $1 AND is_active = FALSE",
+					SQL:   "select count(*) from flows_flowrun where contact_id = $1 AND status = 'C'",
 					Args:  []interface{}{testdata.Cathy.ID},
 					Count: 1,
 				},
@@ -91,19 +91,21 @@ func TestSessionTriggered(t *testing.T) {
 		},
 	}
 
-	handlers.RunTestCases(t, tcs)
+	handlers.RunTestCases(t, ctx, rt, tcs)
 }
 
 func TestQuerySessionTriggered(t *testing.T) {
-	ctx, _, db, rp := testsuite.Reset()
+	ctx, rt, _, rp := testsuite.Get()
 
-	oa, err := models.GetOrgAssets(ctx, db, testdata.Org1.ID)
+	defer testsuite.Reset(testsuite.ResetAll)
+
+	oa, err := models.GetOrgAssets(ctx, rt, testdata.Org1.ID)
 	assert.NoError(t, err)
 
 	favoriteFlow, err := oa.FlowByID(testdata.Favorites.ID)
 	assert.NoError(t, err)
 
-	sessionAction := actions.NewStartSession(handlers.NewActionUUID(), favoriteFlow.FlowReference(), nil, nil, nil, nil, true)
+	sessionAction := actions.NewStartSession(handlers.NewActionUUID(), favoriteFlow.Reference(), nil, nil, nil, nil, true)
 	sessionAction.ContactQuery = "name ~ @contact.name"
 
 	tcs := []handlers.TestCase{
@@ -140,5 +142,5 @@ func TestQuerySessionTriggered(t *testing.T) {
 		},
 	}
 
-	handlers.RunTestCases(t, tcs)
+	handlers.RunTestCases(t, ctx, rt, tcs)
 }

@@ -2,6 +2,7 @@ package mailgun
 
 import (
 	"testing"
+	"time"
 
 	"github.com/nyaruka/mailroom/testsuite"
 	"github.com/nyaruka/mailroom/testsuite/testdata"
@@ -9,16 +10,12 @@ import (
 )
 
 func TestReceive(t *testing.T) {
-	_, _, db, _ := testsuite.Reset()
+	ctx, rt, db, _ := testsuite.Get()
 
-	defer func() {
-		db.MustExec(`DELETE FROM msgs_msg`)
-		db.MustExec(`DELETE FROM tickets_ticketevent`)
-		db.MustExec(`DELETE FROM tickets_ticket`)
-	}()
+	defer testsuite.Reset(testsuite.ResetData | testsuite.ResetStorage)
 
 	// create a mailgun ticket for Cathy
-	ticket := testdata.InsertOpenTicket(db, testdata.Org1, testdata.Cathy, testdata.Mailgun, "Need help", "Have you seen my cookies?", "", nil)
+	ticket := testdata.InsertOpenTicket(db, testdata.Org1, testdata.Cathy, testdata.Mailgun, testdata.DefaultTopic, "Have you seen my cookies?", "", time.Now(), nil)
 
-	web.RunWebTests(t, "testdata/receive.json", map[string]string{"cathy_ticket_uuid": string(ticket.UUID)})
+	web.RunWebTests(t, ctx, rt, "testdata/receive.json", map[string]string{"cathy_ticket_uuid": string(ticket.UUID)})
 }
