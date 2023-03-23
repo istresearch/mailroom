@@ -14,7 +14,6 @@ import (
 
 	_ "github.com/nyaruka/mailroom/core/handlers"
 	_ "github.com/nyaruka/mailroom/core/hooks"
-	_ "github.com/nyaruka/mailroom/core/ivr/psm"
 	_ "github.com/nyaruka/mailroom/core/tasks/analytics"
 	_ "github.com/nyaruka/mailroom/core/tasks/campaigns"
 	_ "github.com/nyaruka/mailroom/core/tasks/contacts"
@@ -27,6 +26,7 @@ import (
 	_ "github.com/nyaruka/mailroom/core/tasks/schedules"
 	_ "github.com/nyaruka/mailroom/core/tasks/starts"
 	_ "github.com/nyaruka/mailroom/core/tasks/timeouts"
+	_ "github.com/nyaruka/mailroom/services/ivr/psm"
 	_ "github.com/nyaruka/mailroom/services/ivr/twiml"
 	_ "github.com/nyaruka/mailroom/services/ivr/vonage"
 	_ "github.com/nyaruka/mailroom/services/tickets/intern"
