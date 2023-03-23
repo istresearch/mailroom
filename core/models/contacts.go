@@ -656,7 +656,7 @@ func GetOrCreateContactIDsFromURNs(ctx context.Context, db QueryerWithTx, oa *Or
 	}
 
 	// find current owners of these URNs
-	owners, err := contactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
+	owners, err := ContactIDsFromURNs(ctx, db, oa.OrgID(), urnz)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error looking up contacts for URNs")
 	}

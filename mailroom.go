@@ -3,6 +3,7 @@ package mailroom
 import (
 	"context"
 	"fmt"
+	"github.com/nyaruka/gocommon/urns"
 	"net/url"
 	"strings"
 	"sync"

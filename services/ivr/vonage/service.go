@@ -126,6 +126,39 @@ func (s *service) CallIDForRequest(r *http.Request) (string, error) {
 	return callID, nil
 }
 
+// EventForCallDataRequest gets the channel event type and duration of a non-ivr call event
+func (s *service) EventForCallDataRequest(r *http.Request) (models.ChannelEventType, int) {
+	body, err := readBody(r)
+	if err != nil {
+		return "", 0
+	}
+
+	status, err := jsonparser.GetString(body, "status")
+	if err != nil {
+		return "", 0
+	}
+
+	if status == "" {
+		status = "missed"
+	}
+
+	duration, err := jsonparser.GetInt(body, "duration")
+	if err != nil {
+		duration = 0
+	}
+
+	switch status {
+	case "miss":
+		return models.MOMissEventType, 0
+	case "in":
+		return models.MOCallEventType, int(duration)
+	case "out":
+		return models.MTCallEventType, int(duration)
+	}
+
+	return "", 0
+}
+
 func (s *service) URNForRequest(r *http.Request) (urns.URN, error) {
 	// get our recording url out
 	body, err := readBody(r)

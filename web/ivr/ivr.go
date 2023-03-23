@@ -190,57 +190,57 @@ func handleCallData(ctx context.Context, rt *runtime.Runtime, r *http.Request, w
 	// load the org id for this UUID (we could load the entire channel here but we want to take the same paths through everything else)
 	orgID, err := models.OrgIDForChannelUUID(ctx, rt.DB, channelUUID)
 	if err != nil {
-		return nil, nil, writeClientError(w, err)
+		return nil, nil, writeGenericErrorResponse(w, err)
 	}
 
 	// load our org assets
-	oa, err := models.GetOrgAssets(ctx, rt.DB, orgID)
+	oa, err := models.GetOrgAssets(ctx, rt, orgID)
 	if err != nil {
-		return nil, nil, writeClientError(w, errors.Wrapf(err, "error loading org assets"))
+		return nil, nil, writeGenericErrorResponse(w, errors.Wrapf(err, "error loading org assets"))
 	}
 
 	// and our channel
 	channel := oa.ChannelByUUID(channelUUID)
 	if channel == nil {
-		return nil, nil, writeClientError(w, errors.Wrapf(err, "no active channel with uuid: %s", channelUUID))
+		return nil, nil, writeGenericErrorResponse(w, errors.Wrapf(err, "no active channel with uuid: %s", channelUUID))
 	}
 
-	// get the right kind of client
-	client, err := ivr.GetClient(channel)
-	if client == nil {
-		return channel, nil, writeClientError(w, errors.Wrapf(err, "unable to load client for channel: %s", channelUUID))
+	// get the right kind of provider
+	provider, err := ivr.GetService(channel)
+	if provider == nil {
+		return channel, nil, writeGenericErrorResponse(w, errors.Wrapf(err, "unable to load client for channel: %s", channelUUID))
 	}
 
 	// validate this request's signature
-	err = client.ValidateRequestSignature(r)
+	err = provider.ValidateRequestSignature(r)
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "request failed signature validation"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "request failed signature validation"))
 	}
 
 	// lookup the URN of the caller
-	urn, err := client.URNForRequest(r)
+	urn, err := provider.URNForRequest(r)
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to find URN in request"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "unable to find URN in request"))
 	}
 
 	// get the contact for this URN
 	contact, _, _, err := models.GetOrCreateContact(ctx, rt.DB, oa, []urns.URN{urn}, channel.ID())
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get contact by urn"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "unable to get contact by urn"))
 	}
 
 	urn, err = models.URNForURN(ctx, rt.DB, oa, urn)
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to load urn"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "unable to load urn"))
 	}
 
 	// urn ID
 	urnID := models.GetURNID(urn)
 	if urnID == models.NilURNID {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "unable to get id for URN"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "unable to get id for URN"))
 	}
 
-	eventType, duration := client.EventForCallDataRequest(r)
+	eventType, duration := provider.EventForCallDataRequest(r)
 
 	var extras map[string]interface{}
 
@@ -252,17 +252,17 @@ func handleCallData(ctx context.Context, rt *runtime.Runtime, r *http.Request, w
 
 	err = event.Insert(ctx, rt.DB)
 	if err != nil {
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "error inserting channel event"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "error inserting channel event"))
 	}
 
 	_, err = handler.HandleChannelEvent(ctx, rt, eventType, event, nil)
 	if err != nil {
 		logrus.WithError(err).WithField("http_request", r).Error("error handling reported call status")
-		return channel, nil, client.WriteErrorResponse(w, errors.Wrapf(err, "error handling reported call status"))
+		return channel, nil, provider.WriteErrorResponse(w, errors.Wrapf(err, "error handling reported call status"))
 	}
 
 	// write our empty response
-	return channel, nil, client.WriteEmptyResponse(w, "reported call handled")
+	return channel, nil, provider.WriteEmptyResponse(w, "reported call handled")
 }
 
 const (
