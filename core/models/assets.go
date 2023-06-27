@@ -4,16 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/goflow/assets"
 	"github.com/nyaruka/goflow/envs"
 	"github.com/nyaruka/goflow/flows"
 	"github.com/nyaruka/goflow/flows/engine"
-	"github.com/nyaruka/mailroom/config"
 	"github.com/nyaruka/mailroom/core/goflow"
+	"github.com/nyaruka/mailroom/runtime"
 	cache "github.com/patrickmn/go-cache"
 	"github.com/pkg/errors"
 )
@@ -21,7 +21,7 @@ import (
 // OrgAssets is our top level cache of all things contained in an org. It is used to build
 // SessionAssets for the engine but also used to cache campaigns and other org level attributes
 type OrgAssets struct {
-	db      *sqlx.DB
+	rt      *runtime.Runtime
 	builtAt time.Time
 
 	orgID OrgID
@@ -61,6 +61,10 @@ type OrgAssets struct {
 	ticketersByID   map[TicketerID]*Ticketer
 	ticketersByUUID map[assets.TicketerUUID]*Ticketer
 
+	topics       []assets.Topic
+	topicsByID   map[TopicID]*Topic
+	topicsByUUID map[assets.TopicUUID]*Topic
+
 	resthooks []assets.Resthook
 	templates []assets.Template
 	triggers  []*Trigger
@@ -92,14 +96,14 @@ type assetLoader struct {
 
 // loadOrgAssetsOnce is a thread safe method to create new org assets from the DB in a thread safe manner
 // that ensures only one goroutine is fetching the org at once. (others will block on the first completing)
-func loadOrgAssetsOnce(ctx context.Context, db *sqlx.DB, orgID OrgID) (*OrgAssets, error) {
+func loadOrgAssetsOnce(ctx context.Context, rt *runtime.Runtime, orgID OrgID) (*OrgAssets, error) {
 	loader := assetLoader{done: make(chan struct{})}
 	actual, inFlight := assetLoaders.LoadOrStore(orgID, &loader)
 	actualLoader := actual.(*assetLoader)
 	if inFlight {
 		<-actualLoader.done
 	} else {
-		actualLoader.assets, actualLoader.err = NewOrgAssets(ctx, db, orgID, nil, RefreshAll)
+		actualLoader.assets, actualLoader.err = NewOrgAssets(ctx, rt, orgID, nil, RefreshAll)
 		close(actualLoader.done)
 		assetLoaders.Delete(orgID)
 	}
@@ -113,10 +117,13 @@ func FlushCache() {
 
 // NewOrgAssets creates and returns a new org assets objects, potentially using the previous
 // org assets passed in to prevent refetching locations
-func NewOrgAssets(ctx context.Context, db *sqlx.DB, orgID OrgID, prev *OrgAssets, refresh Refresh) (*OrgAssets, error) {
+func NewOrgAssets(ctx context.Context, rt *runtime.Runtime, orgID OrgID, prev *OrgAssets, refresh Refresh) (*OrgAssets, error) {
+	// assets are immutable in mailroom so safe to load from readonly database connection
+	db := rt.ReadonlyDB
+
 	// build our new assets
 	oa := &OrgAssets{
-		db:      db,
+		rt:      rt,
 		builtAt: time.Now(),
 		orgID:   orgID,
 	}
@@ -130,7 +137,7 @@ func NewOrgAssets(ctx context.Context, db *sqlx.DB, orgID OrgID, prev *OrgAssets
 	var err error
 
 	if prev == nil || refresh&RefreshOrg > 0 {
-		oa.org, err = LoadOrg(ctx, config.Mailroom, db, orgID)
+		oa.org, err = LoadOrg(ctx, rt.Config, db, orgID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error loading environment for org %d", orgID)
 		}
@@ -320,6 +327,23 @@ func NewOrgAssets(ctx context.Context, db *sqlx.DB, orgID OrgID, prev *OrgAssets
 		oa.ticketersByUUID = prev.ticketersByUUID
 	}
 
+	if prev == nil || refresh&RefreshTopics > 0 {
+		oa.topics, err = loadTopics(ctx, db, orgID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error loading topic assets for org %d", orgID)
+		}
+		oa.topicsByID = make(map[TopicID]*Topic, len(oa.topics))
+		oa.topicsByUUID = make(map[assets.TopicUUID]*Topic, len(oa.topics))
+		for _, t := range oa.topics {
+			oa.topicsByID[t.(*Topic).ID()] = t.(*Topic)
+			oa.topicsByUUID[t.UUID()] = t.(*Topic)
+		}
+	} else {
+		oa.topics = prev.topics
+		oa.topicsByID = prev.topicsByID
+		oa.topicsByUUID = prev.topicsByUUID
+	}
+
 	if prev == nil || refresh&RefreshUsers > 0 {
 		oa.users, err = loadUsers(ctx, db, orgID)
 		if err != nil {
@@ -338,7 +362,7 @@ func NewOrgAssets(ctx context.Context, db *sqlx.DB, orgID OrgID, prev *OrgAssets
 	}
 
 	// intialize our session assets
-	oa.sessionAssets, err = engine.NewSessionAssets(oa.Env(), oa, goflow.MigrationConfig(config.Mailroom))
+	oa.sessionAssets, err = engine.NewSessionAssets(oa.Env(), oa, goflow.MigrationConfig(rt.Config))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error build session assets for org: %d", orgID)
 	}
@@ -367,20 +391,17 @@ const (
 	RefreshLabels      = Refresh(1 << 12)
 	RefreshFlows       = Refresh(1 << 13)
 	RefreshTicketers   = Refresh(1 << 14)
-	RefreshUsers       = Refresh(1 << 15)
+	RefreshTopics      = Refresh(1 << 15)
+	RefreshUsers       = Refresh(1 << 16)
 )
 
 // GetOrgAssets creates or gets org assets for the passed in org
-func GetOrgAssets(ctx context.Context, db *sqlx.DB, orgID OrgID) (*OrgAssets, error) {
-	return GetOrgAssetsWithRefresh(ctx, db, orgID, RefreshNone)
+func GetOrgAssets(ctx context.Context, rt *runtime.Runtime, orgID OrgID) (*OrgAssets, error) {
+	return GetOrgAssetsWithRefresh(ctx, rt, orgID, RefreshNone)
 }
 
 // GetOrgAssetsWithRefresh creates or gets org assets for the passed in org refreshing the passed in assets
-func GetOrgAssetsWithRefresh(ctx context.Context, db *sqlx.DB, orgID OrgID, refresh Refresh) (*OrgAssets, error) {
-	if db == nil {
-		return nil, errors.Errorf("nil db, cannot load org")
-	}
-
+func GetOrgAssetsWithRefresh(ctx context.Context, rt *runtime.Runtime, orgID OrgID, refresh Refresh) (*OrgAssets, error) {
 	// do we have a recent cache?
 	key := fmt.Sprintf("%d", orgID)
 	var cached *OrgAssets
@@ -396,7 +417,7 @@ func GetOrgAssetsWithRefresh(ctx context.Context, db *sqlx.DB, orgID OrgID, refr
 
 	// if it wasn't found at all, reload it
 	if !found {
-		o, err := loadOrgAssetsOnce(ctx, db, orgID)
+		o, err := loadOrgAssetsOnce(ctx, rt, orgID)
 		if err != nil {
 			return nil, err
 		}
@@ -407,7 +428,7 @@ func GetOrgAssetsWithRefresh(ctx context.Context, db *sqlx.DB, orgID OrgID, refr
 	}
 
 	// otherwise we need to refresh only some parts, go do that
-	o, err := NewOrgAssets(ctx, db, orgID, cached, refresh)
+	o, err := NewOrgAssets(ctx, rt, orgID, cached, refresh)
 	if err != nil {
 		return nil, err
 	}
@@ -458,17 +479,17 @@ func (a *OrgAssets) FieldByKey(key string) *Field {
 	return a.fieldsByKey[key]
 }
 
-// CloneForSimulation clones our org assets for simulation
-func (a *OrgAssets) CloneForSimulation(ctx context.Context, db *sqlx.DB, newDefs map[assets.FlowUUID]json.RawMessage, testChannels []assets.Channel) (*OrgAssets, error) {
+// CloneForSimulation clones our org assets for simulation and returns a new org assets with the given flow definitions overrided
+func (a *OrgAssets) CloneForSimulation(ctx context.Context, rt *runtime.Runtime, newDefs map[assets.FlowUUID]json.RawMessage, testChannels []assets.Channel) (*OrgAssets, error) {
 	// only channels and flows can be modified so only refresh those
-	clone, err := NewOrgAssets(context.Background(), a.db, a.OrgID(), a, RefreshFlows)
+	clone, err := NewOrgAssets(context.Background(), a.rt, a.OrgID(), a, RefreshFlows)
 	if err != nil {
 		return nil, err
 	}
 
 	for flowUUID, newDef := range newDefs {
 		// get the original flow
-		flowAsset, err := a.Flow(flowUUID)
+		flowAsset, err := a.FlowByUUID(flowUUID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to find flow with UUID '%s'", flowUUID)
 		}
@@ -484,7 +505,7 @@ func (a *OrgAssets) CloneForSimulation(ctx context.Context, db *sqlx.DB, newDefs
 	clone.channels = append(clone.channels, testChannels...)
 
 	// rebuild our session assets with our new items
-	clone.sessionAssets, err = engine.NewSessionAssets(a.Env(), clone, goflow.MigrationConfig(config.Mailroom))
+	clone.sessionAssets, err = engine.NewSessionAssets(a.Env(), clone, goflow.MigrationConfig(rt.Config))
 	if err != nil {
 		return nil, errors.Wrapf(err, "error build session assets for org: %d", clone.OrgID())
 	}
@@ -492,52 +513,66 @@ func (a *OrgAssets) CloneForSimulation(ctx context.Context, db *sqlx.DB, newDefs
 	return clone, err
 }
 
-// Flow returns the flow with the passed in UUID
-func (a *OrgAssets) Flow(flowUUID assets.FlowUUID) (assets.Flow, error) {
+// FlowByUUID returns the flow with the passed in UUID
+func (a *OrgAssets) FlowByUUID(flowUUID assets.FlowUUID) (assets.Flow, error) {
+	return a.loadFlow(
+		func() assets.Flow {
+			return a.flowByUUID[flowUUID]
+		},
+		func(ctx context.Context) (*Flow, error) {
+			return LoadFlowByUUID(ctx, a.rt.ReadonlyDB, a.orgID, flowUUID)
+		},
+	)
+}
+
+// FlowByName returns the flow with the passed in name
+func (a *OrgAssets) FlowByName(name string) (assets.Flow, error) {
+	return a.loadFlow(
+		func() assets.Flow {
+			for _, f := range a.flowByUUID {
+				if strings.EqualFold(f.Name(), name) {
+					return f
+				}
+			}
+			return nil
+		},
+		func(ctx context.Context) (*Flow, error) {
+			return LoadFlowByName(ctx, a.rt.ReadonlyDB, a.orgID, name)
+		},
+	)
+}
+
+// FlowByID returns the flow with the passed in ID (unlike FlowByUUID, FlowByName returns *Flow rather than assets.Flow)
+func (a *OrgAssets) FlowByID(flowID FlowID) (*Flow, error) {
+	asset, err := a.loadFlow(
+		func() assets.Flow {
+			return a.flowByID[flowID]
+		},
+		func(ctx context.Context) (*Flow, error) {
+			return LoadFlowByID(ctx, a.rt.ReadonlyDB, a.orgID, flowID)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return asset.(*Flow), nil
+}
+
+func (a *OrgAssets) loadFlow(fromCache func() assets.Flow, fromDB func(context.Context) (*Flow, error)) (assets.Flow, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	a.flowCacheLock.RLock()
-	flow, found := a.flowByUUID[flowUUID]
+	flow := fromCache()
 	a.flowCacheLock.RUnlock()
 
-	if found {
+	if flow != nil {
 		return flow, nil
 	}
 
-	dbFlow, err := LoadFlowByUUID(ctx, a.db, a.orgID, flowUUID)
+	dbFlow, err := fromDB(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error loading flow: %s", flowUUID)
-	}
-
-	if dbFlow == nil {
-		return nil, ErrNotFound
-	}
-
-	a.flowCacheLock.Lock()
-	a.flowByID[dbFlow.ID()] = dbFlow
-	a.flowByUUID[dbFlow.UUID()] = dbFlow
-	a.flowCacheLock.Unlock()
-
-	return dbFlow, nil
-}
-
-// FlowByID returns the flow with the passed in ID
-func (a *OrgAssets) FlowByID(flowID FlowID) (*Flow, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
-
-	a.flowCacheLock.RLock()
-	flow, found := a.flowByID[flowID]
-	a.flowCacheLock.RUnlock()
-
-	if found {
-		return flow.(*Flow), nil
-	}
-
-	dbFlow, err := LoadFlowByID(ctx, a.db, a.orgID, flowID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error loading flow: %d", flowID)
+		return nil, errors.Wrap(err, "error loading flow from db")
 	}
 
 	if dbFlow == nil {
@@ -627,6 +662,18 @@ func (a *OrgAssets) TicketerByID(id TicketerID) *Ticketer {
 
 func (a *OrgAssets) TicketerByUUID(uuid assets.TicketerUUID) *Ticketer {
 	return a.ticketersByUUID[uuid]
+}
+
+func (a *OrgAssets) Topics() ([]assets.Topic, error) {
+	return a.topics, nil
+}
+
+func (a *OrgAssets) TopicByID(id TopicID) *Topic {
+	return a.topicsByID[id]
+}
+
+func (a *OrgAssets) TopicByUUID(uuid assets.TopicUUID) *Topic {
+	return a.topicsByUUID[uuid]
 }
 
 func (a *OrgAssets) Users() ([]assets.User, error) {

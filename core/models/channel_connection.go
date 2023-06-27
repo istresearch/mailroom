@@ -5,10 +5,9 @@ import (
 	"database/sql/driver"
 	"time"
 
-	"github.com/nyaruka/null"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/nyaruka/null"
 	"github.com/pkg/errors"
 )
 
@@ -20,6 +19,9 @@ const NilConnectionID = ConnectionID(0)
 
 // ConnectionStatus is the type for the status of a connection
 type ConnectionStatus string
+
+// ConnectionError is the type for the reason of an errored connection
+type ConnectionError null.String
 
 // ConnectionDirection is the type for the direction of a connection
 type ConnectionDirection string
@@ -40,17 +42,18 @@ const (
 
 // connection status constants
 const (
-	ConnectionStatusPending    = ConnectionStatus("P")
-	ConnectionStatusQueued     = ConnectionStatus("Q")
-	ConnectionStatusWired      = ConnectionStatus("W")
-	ConnectionStatusRinging    = ConnectionStatus("R")
-	ConnectionStatusInProgress = ConnectionStatus("I")
-	ConnectionStatusBusy       = ConnectionStatus("B")
-	ConnectionStatusFailed     = ConnectionStatus("F")
-	ConnectionStatusErrored    = ConnectionStatus("E")
-	ConnectionStatusNoAnswer   = ConnectionStatus("N")
-	ConnectionStatusCancelled  = ConnectionStatus("C")
-	ConnectionStatusCompleted  = ConnectionStatus("D")
+	ConnectionStatusPending    = ConnectionStatus("P") // used for initial creation in database
+	ConnectionStatusQueued     = ConnectionStatus("Q") // call can't be wired yet and is queued locally
+	ConnectionStatusWired      = ConnectionStatus("W") // call has been requested on the IVR provider
+	ConnectionStatusInProgress = ConnectionStatus("I") // call was answered and is in progress
+	ConnectionStatusCompleted  = ConnectionStatus("D") // call was completed successfully
+	ConnectionStatusErrored    = ConnectionStatus("E") // temporary failure (will be retried)
+	ConnectionStatusFailed     = ConnectionStatus("F") // permanent failure
+
+	ConnectionErrorProvider = ConnectionError("P")
+	ConnectionErrorBusy     = ConnectionError("B")
+	ConnectionErrorNoAnswer = ConnectionError("N")
+	ConnectionErrorMachine  = ConnectionError("M")
 
 	ConnectionMaxRetries = 3
 
@@ -74,13 +77,13 @@ type ChannelConnection struct {
 		EndedOn        *time.Time          `json:"ended_on"        db:"ended_on"`
 		ConnectionType ConnectionType      `json:"connection_type" db:"connection_type"`
 		Duration       int                 `json:"duration"        db:"duration"`
-		RetryCount     int                 `json:"retry_count"     db:"retry_count"`
+		ErrorReason    null.String         `json:"error_reason"    db:"error_reason"`
+		ErrorCount     int                 `json:"error_count"     db:"error_count"`
 		NextAttempt    *time.Time          `json:"next_attempt"    db:"next_attempt"`
 		ChannelID      ChannelID           `json:"channel_id"      db:"channel_id"`
 		ContactID      ContactID           `json:"contact_id"      db:"contact_id"`
 		ContactURNID   URNID               `json:"contact_urn_id"  db:"contact_urn_id"`
 		OrgID          OrgID               `json:"org_id"          db:"org_id"`
-		ErrorCount     int                 `json:"error_count"     db:"error_count"`
 		StartID        StartID             `json:"start_id"        db:"start_id"`
 	}
 }
@@ -91,17 +94,19 @@ func (c *ChannelConnection) ID() ConnectionID { return c.c.ID }
 // Status returns the status of this connection
 func (c *ChannelConnection) Status() ConnectionStatus { return c.c.Status }
 
-func (c *ChannelConnection) NextAttempt() *time.Time { return c.c.NextAttempt }
-func (c *ChannelConnection) ExternalID() string      { return c.c.ExternalID }
-func (c *ChannelConnection) OrgID() OrgID            { return c.c.OrgID }
-func (c *ChannelConnection) ContactID() ContactID    { return c.c.ContactID }
-func (c *ChannelConnection) ContactURNID() URNID     { return c.c.ContactURNID }
-func (c *ChannelConnection) ChannelID() ChannelID    { return c.c.ChannelID }
-func (c *ChannelConnection) StartID() StartID        { return c.c.StartID }
+func (c *ChannelConnection) ExternalID() string   { return c.c.ExternalID }
+func (c *ChannelConnection) OrgID() OrgID         { return c.c.OrgID }
+func (c *ChannelConnection) ContactID() ContactID { return c.c.ContactID }
+func (c *ChannelConnection) ContactURNID() URNID  { return c.c.ContactURNID }
+func (c *ChannelConnection) ChannelID() ChannelID { return c.c.ChannelID }
+func (c *ChannelConnection) StartID() StartID     { return c.c.StartID }
 
-const insertConnectionSQL = `
-INSERT INTO
-	channels_channelconnection
+func (c *ChannelConnection) ErrorReason() ConnectionError { return ConnectionError(c.c.ErrorReason) }
+func (c *ChannelConnection) ErrorCount() int              { return c.c.ErrorCount }
+func (c *ChannelConnection) NextAttempt() *time.Time      { return c.c.NextAttempt }
+
+const sqlInsertConnection = `
+INSERT INTO channels_channelconnection
 (
 	created_on,
 	modified_on,
@@ -114,10 +119,8 @@ INSERT INTO
 	channel_id,
 	contact_id,
 	contact_urn_id,
-	error_count,
-	retry_count
+	error_count
 )
-
 VALUES(
 	NOW(),
 	NOW(),
@@ -130,13 +133,9 @@ VALUES(
 	:channel_id,
 	:contact_id,
 	:contact_urn_id,
-	0,
 	0
 )
-RETURNING
-	id,
-	NOW();
-`
+RETURNING id, NOW();`
 
 // InsertIVRConnection creates a new IVR session for the passed in org, channel and contact, inserting it
 func InsertIVRConnection(ctx context.Context, db *sqlx.DB, orgID OrgID, channelID ChannelID, startID StartID, contactID ContactID, urnID URNID,
@@ -155,7 +154,7 @@ func InsertIVRConnection(ctx context.Context, db *sqlx.DB, orgID OrgID, channelI
 	c.ExternalID = externalID
 	c.StartID = startID
 
-	rows, err := db.NamedQueryContext(ctx, insertConnectionSQL, c)
+	rows, err := db.NamedQueryContext(ctx, sqlInsertConnection, c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error inserting new channel connection")
 	}
@@ -200,13 +199,13 @@ SELECT
 	cc.ended_on as ended_on, 
 	cc.connection_type as connection_type, 
 	cc.duration as duration, 
-	cc.retry_count as retry_count, 
+	cc.error_reason as error_reason,
+	cc.error_count as error_count,
 	cc.next_attempt as next_attempt, 
 	cc.channel_id as channel_id, 
 	cc.contact_id as contact_id, 
 	cc.contact_urn_id as contact_urn_id, 
 	cc.org_id as org_id, 
-	cc.error_count as error_count, 
 	fsc.flowstart_id as start_id
 FROM
 	channels_channelconnection as cc
@@ -237,13 +236,13 @@ SELECT
 	cc.ended_on as ended_on, 
 	cc.connection_type as connection_type, 
 	cc.duration as duration, 
-	cc.retry_count as retry_count, 
+	cc.error_reason as error_reason,
+	cc.error_count as error_count,
 	cc.next_attempt as next_attempt, 
 	cc.channel_id as channel_id, 
 	cc.contact_id as contact_id, 
 	cc.contact_urn_id as contact_urn_id, 
 	cc.org_id as org_id, 
-	cc.error_count as error_count, 
 	fsc.flowstart_id as start_id
 FROM
 	channels_channelconnection as cc
@@ -279,21 +278,21 @@ SELECT
 	cc.ended_on as ended_on, 
 	cc.connection_type as connection_type, 
 	cc.duration as duration, 
-	cc.retry_count as retry_count, 
+	cc.error_reason as error_reason,
+	cc.error_count as error_count,
 	cc.next_attempt as next_attempt, 
 	cc.channel_id as channel_id, 
 	cc.contact_id as contact_id, 
 	cc.contact_urn_id as contact_urn_id, 
 	cc.org_id as org_id, 
-	cc.error_count as error_count, 
 	fsc.flowstart_id as start_id
 FROM
 	channels_channelconnection as cc
 	LEFT OUTER JOIN flows_flowstart_connections fsc ON cc.id = fsc.channelconnection_id
 WHERE
 	cc.connection_type = 'V' AND
-	next_attempt < NOW() AND
-	(cc.status = 'E' OR cc.status = 'Q')
+	cc.status IN ('Q', 'E') AND
+	next_attempt < NOW()
 ORDER BY 
 	cc.next_attempt ASC
 LIMIT
@@ -354,13 +353,14 @@ func (c *ChannelConnection) MarkStarted(ctx context.Context, db Queryer, now tim
 }
 
 // MarkErrored updates the status for this connection to errored and schedules a retry if appropriate
-func (c *ChannelConnection) MarkErrored(ctx context.Context, db Queryer, now time.Time, wait time.Duration) error {
+func (c *ChannelConnection) MarkErrored(ctx context.Context, db Queryer, now time.Time, retryWait *time.Duration, errorReason ConnectionError) error {
 	c.c.Status = ConnectionStatusErrored
+	c.c.ErrorReason = null.String(errorReason)
 	c.c.EndedOn = &now
 
-	if c.c.RetryCount < ConnectionMaxRetries && (wait > time.Minute) {
-		c.c.RetryCount++
-		next := now.Add(wait)
+	if c.c.ErrorCount < ConnectionMaxRetries && retryWait != nil {
+		c.c.ErrorCount++
+		next := now.Add(*retryWait)
 		c.c.NextAttempt = &next
 	} else {
 		c.c.Status = ConnectionStatusFailed
@@ -368,8 +368,8 @@ func (c *ChannelConnection) MarkErrored(ctx context.Context, db Queryer, now tim
 	}
 
 	_, err := db.ExecContext(ctx,
-		`UPDATE channels_channelconnection SET status = $2, ended_on = $3, retry_count = $4, next_attempt = $5, modified_on = NOW() WHERE id = $1`,
-		c.c.ID, c.c.Status, c.c.EndedOn, c.c.RetryCount, c.c.NextAttempt,
+		`UPDATE channels_channelconnection SET status = $2, ended_on = $3, error_reason = $4, error_count = $5, next_attempt = $6, modified_on = NOW() WHERE id = $1`,
+		c.c.ID, c.c.Status, c.c.EndedOn, c.c.ErrorReason, c.c.ErrorCount, c.c.NextAttempt,
 	)
 
 	if err != nil {

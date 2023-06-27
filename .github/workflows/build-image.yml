@@ -1,0 +1,70 @@
+name: build image
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - master
+    tags:
+      - 'v*'
+
+jobs:
+  build_cfg:
+    runs-on: ubuntu-latest
+    environment: default
+    outputs:
+      VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Determine Version"
+        id: config_step
+        run: |-
+          VERSION_STR=$(cat VERSION)
+          echo "::notice::Version STR=${VERSION_STR}"
+          echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
+  #endjob build_cfg
+
+  trigger-build:
+    runs-on: ubuntu-latest
+    needs: [build_cfg]
+    environment: default
+    env:
+      K8S_PROJECT: pulse-engage-mailroom
+      K8S_CONTAINER: mailroom
+      SLACK_DEPLOY_MSG:
+    steps:
+      - name: "Trigger Container Build"
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.CI_WEBHOOK_TOKEN }}
+          repository: istresearch/ci-docker
+          event-type: build-repo
+          client-payload: |-
+            {
+              "repo": {
+                "name": "${{ github.repository }}",
+                "ref_type": "${{ github.ref_type }}",
+                "ref_name": "${{ github.ref_name }}"
+              },
+              "image": {
+                "dockerfile": "Dockerfile",
+                "arch_allowed": "amd64 arm64",
+                "name": "${{ github.repository }}",
+                "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
+                "build_args": [
+                ]
+              },
+              "deployment": {
+                "deploy_flag": "${{ github.ref_type == 'branch' }}",
+                "k8s_project": "${{ env.K8S_PROJECT }}",
+                "k8s_container": "${{ env.K8S_CONTAINER }}",
+                "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
+              },
+              "callback": {
+                "repository": "${{ github.repository }}",
+                "event_type": "build_image_result",
+                "error_type": "build_image_error"
+              }
+            }
+  #endjob trigger-build

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/goflow/assets"
 	"github.com/nyaruka/goflow/flows"
 	"github.com/nyaruka/goflow/flows/events"
 	"github.com/nyaruka/mailroom/core/models"
+	"github.com/nyaruka/mailroom/runtime"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -20,7 +20,7 @@ var CommitFieldChangesHook models.EventCommitHook = &commitFieldChangesHook{}
 type commitFieldChangesHook struct{}
 
 // Apply squashes and writes all the field updates for the contacts
-func (h *commitFieldChangesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *redis.Pool, oa *models.OrgAssets, scenes map[*models.Scene][]interface{}) error {
+func (h *commitFieldChangesHook) Apply(ctx context.Context, rt *runtime.Runtime, tx *sqlx.Tx, oa *models.OrgAssets, scenes map[*models.Scene][]interface{}) error {
 	// our list of updates
 	fieldUpdates := make([]interface{}, 0, len(scenes))
 	fieldDeletes := make(map[assets.FieldUUID][]interface{})
@@ -68,7 +68,7 @@ func (h *commitFieldChangesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *red
 	// first apply our deletes
 	// in pg9.6 we need to do this as one query per field type, in pg10 we can rewrite this to be a single query
 	for _, fds := range fieldDeletes {
-		err := models.BulkQuery(ctx, "deleting contact field values", tx, deleteContactFieldsSQL, fds)
+		err := models.BulkQuery(ctx, "deleting contact field values", tx, sqlDeleteContactFields, fds)
 		if err != nil {
 			return errors.Wrapf(err, "error deleting contact fields")
 		}
@@ -76,7 +76,7 @@ func (h *commitFieldChangesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *red
 
 	// then our updates
 	if len(fieldUpdates) > 0 {
-		err := models.BulkQuery(ctx, "updating contact field values", tx, updateContactFieldsSQL, fieldUpdates)
+		err := models.BulkQuery(ctx, "updating contact field values", tx, sqlUpdateContactFields, fieldUpdates)
 		if err != nil {
 			return errors.Wrapf(err, "error updating contact fields")
 		}
@@ -99,30 +99,14 @@ type FieldValue struct {
 	Text string `json:"text"`
 }
 
-const updateContactFieldsSQL = `
-UPDATE 
-	contacts_contact c
-SET
-	fields = COALESCE(fields,'{}'::jsonb) || r.updates::jsonb,
-	modified_on = NOW()
-FROM (
-	VALUES(:contact_id, :updates)
-) AS
-	r(contact_id, updates)
-WHERE
-	c.id = r.contact_id::int
-`
+const sqlUpdateContactFields = `
+UPDATE contacts_contact c
+   SET fields = COALESCE(fields,'{}'::jsonb) || r.updates::jsonb
+  FROM (VALUES(:contact_id, :updates)) AS r(contact_id, updates)
+ WHERE c.id = r.contact_id::int`
 
-const deleteContactFieldsSQL = `
-UPDATE 
-	contacts_contact c
-SET
-	fields = fields - r.field_uuid,
-	modified_on = NOW()
-FROM (
-	VALUES(:contact_id, :field_uuid)
-) AS
-	r(contact_id, field_uuid)
-WHERE
-	c.id = r.contact_id::int
-`
+const sqlDeleteContactFields = `
+UPDATE contacts_contact c
+   SET fields = fields - r.field_uuid
+  FROM (VALUES(:contact_id, :field_uuid)) AS r(contact_id, field_uuid)
+ WHERE c.id = r.contact_id::int`

@@ -11,12 +11,10 @@ import (
 	"github.com/nyaruka/mailroom/core/models"
 	"github.com/nyaruka/mailroom/core/queue"
 	"github.com/nyaruka/mailroom/core/runner"
+	"github.com/nyaruka/mailroom/core/search"
 	"github.com/nyaruka/mailroom/runtime"
 
-	"github.com/gomodule/redigo/redis"
-	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/olivere/elastic/v7"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +43,7 @@ func handleFlowStart(ctx context.Context, rt *runtime.Runtime, task *queue.Task)
 		return errors.Wrapf(err, "error unmarshalling flow start task: %s", string(task.Task))
 	}
 
-	err = CreateFlowBatches(ctx, rt.DB, rt.RP, rt.ES, startTask)
+	err = CreateFlowBatches(ctx, rt, startTask)
 	if err != nil {
 		models.MarkStartFailed(ctx, rt.DB, startTask.ID())
 
@@ -60,7 +58,7 @@ func handleFlowStart(ctx context.Context, rt *runtime.Runtime, task *queue.Task)
 }
 
 // CreateFlowBatches takes our master flow start and creates batches of flow starts for all the unique contacts
-func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *elastic.Client, start *models.FlowStart) error {
+func CreateFlowBatches(ctx context.Context, rt *runtime.Runtime, start *models.FlowStart) error {
 	contactIDs := make(map[models.ContactID]bool)
 	createdContactIDs := make([]models.ContactID, 0)
 
@@ -69,14 +67,14 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 		contactIDs[id] = true
 	}
 
-	oa, err := models.GetOrgAssets(ctx, db, start.OrgID())
+	oa, err := models.GetOrgAssets(ctx, rt, start.OrgID())
 	if err != nil {
 		return errors.Wrapf(err, "error loading org assets")
 	}
 
 	// look up any contacts by URN
 	if len(start.URNs()) > 0 {
-		urnContactIDs, err := models.GetOrCreateContactIDsFromURNs(ctx, db, oa, start.URNs())
+		urnContactIDs, err := models.GetOrCreateContactIDsFromURNs(ctx, rt.DB, oa, start.URNs())
 		if err != nil {
 			return errors.Wrapf(err, "error getting contact ids from urns")
 		}
@@ -90,7 +88,7 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 
 	// if we are meant to create a new contact, do so
 	if start.CreateContact() {
-		contact, _, err := models.CreateContact(ctx, db, oa, models.NilUserID, "", envs.NilLanguage, nil)
+		contact, _, err := models.CreateContact(ctx, rt.DB, oa, models.NilUserID, "", envs.NilLanguage, nil)
 		if err != nil {
 			return errors.Wrapf(err, "error creating new contact")
 		}
@@ -100,7 +98,7 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 
 	// if we have inclusion groups, add all the contact ids from those groups
 	if len(start.GroupIDs()) > 0 {
-		rows, err := db.QueryxContext(ctx, `SELECT contact_id FROM contacts_contactgroup_contacts WHERE contactgroup_id = ANY($1)`, pq.Array(start.GroupIDs()))
+		rows, err := rt.DB.QueryxContext(ctx, `SELECT contact_id FROM contacts_contactgroup_contacts WHERE contactgroup_id = ANY($1)`, pq.Array(start.GroupIDs()))
 		if err != nil {
 			return errors.Wrapf(err, "error querying contacts from inclusion groups")
 		}
@@ -118,7 +116,12 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 
 	// if we have a query, add the contacts that match that as well
 	if start.Query() != "" {
-		matches, err := models.ContactIDsForQuery(ctx, ec, oa, start.Query())
+		// queries in start_session flow actions only match a single contact
+		limit := -1
+		if start.Type() == models.StartTypeFlowAction {
+			limit = 1
+		}
+		matches, err := search.GetContactIDsForQuery(ctx, rt.ES, oa, start.Query(), limit)
 		if err != nil {
 			return errors.Wrapf(err, "error performing search for start: %d", start.ID())
 		}
@@ -130,7 +133,7 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 
 	// finally, if we have exclusion groups, remove all the contact ids from those groups
 	if len(start.ExcludeGroupIDs()) > 0 {
-		rows, err := db.QueryxContext(ctx, `SELECT contact_id FROM contacts_contactgroup_contacts WHERE contactgroup_id = ANY($1)`, pq.Array(start.ExcludeGroupIDs()))
+		rows, err := rt.DB.QueryxContext(ctx, `SELECT contact_id FROM contacts_contactgroup_contacts WHERE contactgroup_id = ANY($1)`, pq.Array(start.ExcludeGroupIDs()))
 		if err != nil {
 			return errors.Wrapf(err, "error querying contacts from exclusion groups")
 		}
@@ -146,18 +149,18 @@ func CreateFlowBatches(ctx context.Context, db *sqlx.DB, rp *redis.Pool, ec *ela
 		}
 	}
 
-	rc := rp.Get()
+	rc := rt.RP.Get()
 	defer rc.Close()
 
 	// mark our start as starting, last task will mark as complete
-	err = models.MarkStartStarted(ctx, db, start.ID(), len(contactIDs), createdContactIDs)
+	err = models.MarkStartStarted(ctx, rt.DB, start.ID(), len(contactIDs), createdContactIDs)
 	if err != nil {
 		return errors.Wrapf(err, "error marking start as started")
 	}
 
 	// if there are no contacts to start, mark our start as complete, we are done
 	if len(contactIDs) == 0 {
-		err = models.MarkStartComplete(ctx, db, start.ID())
+		err = models.MarkStartComplete(ctx, rt.DB, start.ID())
 		if err != nil {
 			return errors.Wrapf(err, "error marking start as complete")
 		}

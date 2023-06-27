@@ -18,7 +18,9 @@ import (
 )
 
 func TestBroadcastCreated(t *testing.T) {
-	defer testsuite.Reset()
+	ctx, rt, _, _ := testsuite.Get()
+
+	defer testsuite.Reset(testsuite.ResetAll)
 
 	// TODO: test contacts, groups
 
@@ -31,7 +33,7 @@ func TestBroadcastCreated(t *testing.T) {
 			},
 			SQLAssertions: []handlers.SQLAssertion{
 				{
-					SQL:   "select count(*) from flows_flowrun where contact_id = $1 AND is_active = FALSE",
+					SQL:   "select count(*) from flows_flowrun where contact_id = $1 AND status = 'C'",
 					Args:  []interface{}{testdata.Cathy.ID},
 					Count: 1,
 				},
@@ -56,5 +58,5 @@ func TestBroadcastCreated(t *testing.T) {
 		},
 	}
 
-	handlers.RunTestCases(t, tcs)
+	handlers.RunTestCases(t, ctx, rt, tcs)
 }
