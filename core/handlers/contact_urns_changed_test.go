@@ -2,7 +2,6 @@ package handlers_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/nyaruka/gocommon/urns"
 	"github.com/nyaruka/goflow/flows"
@@ -13,14 +12,12 @@ import (
 )
 
 func TestContactURNsChanged(t *testing.T) {
-	_, _, db, _ := testsuite.Get()
+	ctx, rt, db, _ := testsuite.Get()
 
-	defer testsuite.Reset()
+	defer testsuite.Reset(testsuite.ResetAll)
 
 	// add a URN to george that cathy will steal
 	testdata.InsertContactURN(db, testdata.Org1, testdata.George, urns.URN("tel:+12065551212"), 100)
-
-	now := time.Now()
 
 	tcs := []handlers.TestCase{
 		{
@@ -55,15 +52,9 @@ func TestContactURNsChanged(t *testing.T) {
 					Args:  []interface{}{testdata.George.ID},
 					Count: 1,
 				},
-				// two contacts updated, both cathy and evan since their URNs changed
-				{
-					SQL:   "select count(*) from contacts_contact where modified_on > $1",
-					Args:  []interface{}{now},
-					Count: 2,
-				},
 			},
 		},
 	}
 
-	handlers.RunTestCases(t, tcs)
+	handlers.RunTestCases(t, ctx, rt, tcs)
 }

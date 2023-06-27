@@ -2,53 +2,34 @@ package schedules
 
 import (
 	"context"
-	"sync"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/mailroom"
 	"github.com/nyaruka/mailroom/core/models"
 	"github.com/nyaruka/mailroom/core/queue"
 	"github.com/nyaruka/mailroom/runtime"
-	"github.com/nyaruka/mailroom/utils/cron"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	scheduleLock = "fire_schedules"
-)
-
 func init() {
-	mailroom.AddInitFunction(StartCheckSchedules)
-}
-
-// StartCheckSchedules starts our cron job of firing schedules every minute
-func StartCheckSchedules(rt *runtime.Runtime, wg *sync.WaitGroup, quit chan bool) error {
-	cron.StartCron(quit, rt.RP, scheduleLock, time.Minute*1,
-		func(lockName string, lockValue string) error {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute*5)
-			defer cancel()
-			// we sleep 1 second since we fire right on the minute and want to make sure to fire
-			// things that are schedules right at the minute as well (and DB time may be slightly drifted)
-			time.Sleep(time.Second * 1)
-			return checkSchedules(ctx, rt.DB, rt.RP, lockName, lockValue)
-		},
-	)
-	return nil
+	mailroom.RegisterCron("fire_schedules", time.Minute*1, false, checkSchedules)
 }
 
 // checkSchedules looks up any expired schedules and fires them, setting the next fire as needed
-func checkSchedules(ctx context.Context, db *sqlx.DB, rp *redis.Pool, lockName string, lockValue string) error {
-	log := logrus.WithField("comp", "schedules_cron").WithField("lock", lockValue)
+func checkSchedules(ctx context.Context, rt *runtime.Runtime) error {
+	// we sleep 1 second since we fire right on the minute and want to make sure to fire
+	// things that are schedules right at the minute as well (and DB time may be slightly drifted)
+	time.Sleep(time.Second * 1)
+
+	log := logrus.WithField("comp", "schedules_cron")
 	start := time.Now()
 
-	rc := rp.Get()
+	rc := rt.RP.Get()
 	defer rc.Close()
 
 	// get any expired schedules
-	unfired, err := models.GetUnfiredSchedules(ctx, db)
+	unfired, err := models.GetUnfiredSchedules(ctx, rt.DB)
 	if err != nil {
 		return errors.Wrapf(err, "error while getting unfired schedules")
 	}
@@ -77,7 +58,7 @@ func checkSchedules(ctx context.Context, db *sqlx.DB, rp *redis.Pool, lockName s
 		}
 
 		// open a transaction for committing all the items for this fire
-		tx, err := db.BeginTxx(ctx, nil)
+		tx, err := rt.DB.BeginTxx(ctx, nil)
 		if err != nil {
 			log.WithError(err).Error("error starting transaction for schedule fire")
 			continue

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/nyaruka/goflow/flows/events"
 	"github.com/nyaruka/mailroom/core/models"
+	"github.com/nyaruka/mailroom/runtime"
 	"github.com/nyaruka/null"
 )
 
@@ -17,9 +17,9 @@ var CommitNameChangesHook models.EventCommitHook = &commitNameChangesHook{}
 type commitNameChangesHook struct{}
 
 // Apply commits our contact name changes as a bulk update for the passed in map of scene
-func (h *commitNameChangesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *redis.Pool, oa *models.OrgAssets, scenes map[*models.Scene][]interface{}) error {
+func (h *commitNameChangesHook) Apply(ctx context.Context, rt *runtime.Runtime, tx *sqlx.Tx, oa *models.OrgAssets, scenes map[*models.Scene][]interface{}) error {
 	// build up our list of pairs of contact id and contact name
-	updates := make([]interface{}, 0, len(scenes))
+	updates := make([]*nameUpdate, 0, len(scenes))
 	for s, e := range scenes {
 		// we only care about the last name change
 		event := e[len(e)-1].(*events.ContactNameChangedEvent)
@@ -27,7 +27,7 @@ func (h *commitNameChangesHook) Apply(ctx context.Context, tx *sqlx.Tx, rp *redi
 	}
 
 	// do our update
-	return models.BulkQuery(ctx, "updating contact name", tx, updateContactNameSQL, updates)
+	return models.BulkQuery(ctx, "updating contact name", tx, sqlUpdateContactName, updates)
 }
 
 // struct used for our bulk insert
@@ -36,16 +36,8 @@ type nameUpdate struct {
 	Name      null.String      `db:"name"`
 }
 
-const updateContactNameSQL = `
-	UPDATE 
-		contacts_contact c
-	SET
-		name = r.name,
-		modified_on = NOW()
-	FROM (
-		VALUES(:id, :name)
-	) AS
-		r(id, name)
-	WHERE
-		c.id = r.id::int
-`
+const sqlUpdateContactName = `
+UPDATE contacts_contact c
+   SET name = r.name
+  FROM (VALUES(:id, :name)) AS r(id, name)
+ WHERE c.id = r.id::int`

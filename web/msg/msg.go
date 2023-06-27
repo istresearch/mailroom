@@ -38,26 +38,26 @@ func handleResend(ctx context.Context, rt *runtime.Runtime, r *http.Request) (in
 	}
 
 	// grab our org
-	oa, err := models.GetOrgAssets(ctx, rt.DB, request.OrgID)
+	oa, err := models.GetOrgAssets(ctx, rt, request.OrgID)
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrapf(err, "unable to load org assets")
 	}
 
-	msgs, err := models.LoadMessages(ctx, rt.DB, request.OrgID, models.DirectionOut, request.MsgIDs)
+	msgs, err := models.GetMessagesByID(ctx, rt.DB, request.OrgID, models.DirectionOut, request.MsgIDs)
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "error loading messages to resend")
 	}
 
-	err = models.ResendMessages(ctx, rt.DB, rt.RP, oa, msgs)
+	resends, err := models.ResendMessages(ctx, rt.DB, rt.RP, oa, msgs)
 	if err != nil {
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "error resending messages")
 	}
 
-	msgio.SendMessages(ctx, rt.DB, rt.RP, nil, msgs)
+	msgio.SendMessages(ctx, rt, rt.DB, nil, resends)
 
 	// response is the ids of the messages that were actually resent
-	resentMsgIDs := make([]flows.MsgID, len(msgs))
-	for i, m := range msgs {
+	resentMsgIDs := make([]flows.MsgID, len(resends))
+	for i, m := range resends {
 		resentMsgIDs[i] = m.ID()
 	}
 	return map[string]interface{}{"msg_ids": resentMsgIDs}, http.StatusOK, nil

@@ -3,30 +3,32 @@ package main
 import (
 	"os"
 	"os/signal"
-	"runtime"
+	goruntime "runtime"
 	"syscall"
 
 	"github.com/nyaruka/ezconf"
 	"github.com/nyaruka/gocommon/uuids"
 	"github.com/nyaruka/logrus_sentry"
 	"github.com/nyaruka/mailroom"
-	"github.com/nyaruka/mailroom/config"
+	"github.com/nyaruka/mailroom/runtime"
 
 	_ "github.com/nyaruka/mailroom/core/handlers"
 	_ "github.com/nyaruka/mailroom/core/hooks"
-	_ "github.com/nyaruka/mailroom/core/ivr/psm"
-	_ "github.com/nyaruka/mailroom/core/ivr/twiml"
-	_ "github.com/nyaruka/mailroom/core/ivr/vonage"
-	_ "github.com/nyaruka/mailroom/core/tasks/broadcasts"
+	_ "github.com/nyaruka/mailroom/core/tasks/analytics"
 	_ "github.com/nyaruka/mailroom/core/tasks/campaigns"
 	_ "github.com/nyaruka/mailroom/core/tasks/contacts"
 	_ "github.com/nyaruka/mailroom/core/tasks/expirations"
+	_ "github.com/nyaruka/mailroom/core/tasks/handler"
+	_ "github.com/nyaruka/mailroom/core/tasks/incidents"
 	_ "github.com/nyaruka/mailroom/core/tasks/interrupts"
 	_ "github.com/nyaruka/mailroom/core/tasks/ivr"
+	_ "github.com/nyaruka/mailroom/core/tasks/msgs"
 	_ "github.com/nyaruka/mailroom/core/tasks/schedules"
 	_ "github.com/nyaruka/mailroom/core/tasks/starts"
-	_ "github.com/nyaruka/mailroom/core/tasks/stats"
 	_ "github.com/nyaruka/mailroom/core/tasks/timeouts"
+	_ "github.com/nyaruka/mailroom/services/ivr/psm"
+	_ "github.com/nyaruka/mailroom/services/ivr/twiml"
+	_ "github.com/nyaruka/mailroom/services/ivr/vonage"
 	_ "github.com/nyaruka/mailroom/services/tickets/intern"
 	_ "github.com/nyaruka/mailroom/services/tickets/mailgun"
 	_ "github.com/nyaruka/mailroom/services/tickets/rocketchat"
@@ -47,7 +49,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var version = "Dev"
+var (
+	// https://goreleaser.com/cookbooks/using-main.version
+	version = "dev"
+	date    = "unknown"
+)
 
 type UTCLogFormatter struct {
 	logrus.Formatter
@@ -59,7 +65,8 @@ func (u UTCLogFormatter) Format(e *logrus.Entry) ([]byte, error) {
 }
 
 func main() {
-	config := config.Mailroom
+	config := runtime.NewDefaultConfig()
+	config.Version = version
 	loader := ezconf.NewLoader(
 		config,
 		"mailroom", "Mailroom - flow event handler for RapidPro",
@@ -72,13 +79,6 @@ func main() {
 		logrus.Fatalf("invalid config: %s", err)
 	}
 
-	// if we have a custom version, use it
-	if version != "Dev" {
-		config.Version = version
-	}
-
-	// configure our logger
-	logrus.SetOutput(os.Stdout)
 	logrus.SetFormatter(UTCLogFormatter{&logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02T15:04:05.000Z",
 		FieldMap: logrus.FieldMap{
@@ -92,7 +92,11 @@ func main() {
 	if err != nil {
 		logrus.Fatalf("invalid log level '%s'", level)
 	}
+
 	logrus.SetLevel(level)
+	logrus.SetOutput(os.Stdout)
+	logrus.SetFormatter(&logrus.TextFormatter{})
+	logrus.WithField("version", version).WithField("released", date).Info("starting mailroom")
 
 	// if we have a DSN entry, try to initialize it
 	if config.SentryDSN != "" {
@@ -125,7 +129,7 @@ func main() {
 
 // handleSignals takes care of trapping quit, interrupt or terminate signals and doing the right thing
 func handleSignals(mr *mailroom.Mailroom) {
-	sigs := make(chan os.Signal)
+	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	for {
@@ -133,7 +137,7 @@ func handleSignals(mr *mailroom.Mailroom) {
 		switch sig {
 		case syscall.SIGQUIT:
 			buf := make([]byte, 1<<20)
-			stacklen := runtime.Stack(buf, true)
+			stacklen := goruntime.Stack(buf, true)
 			logrus.WithField("comp", "main").WithField("signal", sig).Info("received quit signal, dumping stack")
 			logrus.Printf("\n%s", buf[:stacklen])
 		case syscall.SIGINT, syscall.SIGTERM:

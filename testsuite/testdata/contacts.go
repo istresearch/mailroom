@@ -47,21 +47,26 @@ type Field struct {
 }
 
 // InsertContact inserts a contact
-func InsertContact(db *sqlx.DB, org *Org, uuid flows.ContactUUID, name string, language envs.Language) *Contact {
+func InsertContact(db *sqlx.DB, org *Org, uuid flows.ContactUUID, name string, language envs.Language, status models.ContactStatus) *Contact {
 	var id models.ContactID
 	must(db.Get(&id,
-		`INSERT INTO contacts_contact (org_id, is_active, status, uuid, name, language, created_on, modified_on, created_by_id, modified_by_id) 
-		VALUES($1, TRUE, 'A', $2, $3, $4, NOW(), NOW(), 1, 1) RETURNING id`, org.ID, uuid, name, language,
+		`INSERT INTO contacts_contact (org_id, is_active, ticket_count, uuid, name, language, status, created_on, modified_on, created_by_id, modified_by_id) 
+		VALUES($1, TRUE, 0, $2, $3, $4, $5, NOW(), NOW(), 1, 1) RETURNING id`, org.ID, uuid, name, language, status,
 	))
 	return &Contact{id, uuid, "", models.NilURNID}
 }
 
 // InsertContactGroup inserts a contact group
 func InsertContactGroup(db *sqlx.DB, org *Org, uuid assets.GroupUUID, name, query string) *Group {
+	groupType := "M"
+	if query != "" {
+		groupType = "Q"
+	}
+
 	var id models.GroupID
 	must(db.Get(&id,
-		`INSERT INTO contacts_contactgroup(uuid, org_id, group_type, name, query, status, is_active, created_by_id, created_on, modified_by_id, modified_on) 
-		 VALUES($1, $2, 'U', $3, $4, 'R', TRUE, 1, NOW(), 1, NOW()) RETURNING id`, uuid, org.ID, name, null.String(query),
+		`INSERT INTO contacts_contactgroup(uuid, org_id, group_type, name, query, status, is_system, is_active, created_by_id, created_on, modified_by_id, modified_on) 
+		 VALUES($1, $2, $3, $4, $5, 'R', FALSE, TRUE, 1, NOW(), 1, NOW()) RETURNING id`, uuid, org.ID, groupType, name, null.String(query),
 	))
 	return &Group{id, uuid}
 }
@@ -81,16 +86,4 @@ func InsertContactURN(db *sqlx.DB, org *Org, contact *Contact, urn urns.URN, pri
 		 VALUES($1, $2, $3, $4, $5, $6) RETURNING id`, org.ID, contactID, scheme, path, urn.Identity(), priority,
 	))
 	return id
-}
-
-// DeleteContactsAndURNs deletes all contacts and URNs
-func DeleteContactsAndURNs(db *sqlx.DB) {
-	db.MustExec(`DELETE FROM msgs_msg`)
-	db.MustExec(`DELETE FROM contacts_contacturn`)
-	db.MustExec(`DELETE FROM contacts_contactgroup_contacts`)
-	db.MustExec(`DELETE FROM contacts_contact`)
-
-	// reset id sequences back to a known number
-	db.MustExec(`ALTER SEQUENCE contacts_contact_id_seq RESTART WITH 10000`)
-	db.MustExec(`ALTER SEQUENCE contacts_contacturn_id_seq RESTART WITH 10000`)
 }
