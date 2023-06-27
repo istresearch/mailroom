@@ -9,7 +9,6 @@ require (
 	github.com/edganiukov/fcm v0.4.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/redigo v1.8.8
 	github.com/gorilla/schema v1.2.0
@@ -57,12 +56,12 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	golang.org/x/exp v0.0.0-20220613132600-b0d781184e0d // indirect
-	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
-	golang.org/x/sys v0.0.0-20220627191245-f75cf1eec38b // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/nyaruka/goflow v0.163.0 => github.com/istresearch/goflow v0.2303.22-211
+replace github.com/nyaruka/goflow v0.163.0 => github.com/istresearch/goflow v0.2306.27-135
