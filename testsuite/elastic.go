@@ -87,7 +87,6 @@ func (m *MockElasticServer) AddResponse(ids ...models.ContactID) {
 	for i := range ids {
 		hits[i] = map[string]interface{}{
 			"_index":   "contacts",
-			"_type":    "_doc",
 			"_id":      fmt.Sprintf("%d", ids[i]),
 			"_score":   nil,
 			"_routing": "1",
