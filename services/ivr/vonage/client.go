@@ -23,7 +23,7 @@ type CallRequest struct {
 	EventMethod  string   `json:"event_method"`
 
 	NCCO             []NCCO `json:"ncco,omitempty"`
-	MachineDetection string `json:"machine_detection"`
+	MachineDetection string `json:"machine_detection,omitempty"`
 	RingingTimer     int    `json:"ringing_timer,omitempty"`
 }
 
