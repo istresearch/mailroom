@@ -1,10 +1,12 @@
 package main
 
 import (
+	"math/rand"
 	"os"
 	"os/signal"
 	goruntime "runtime"
 	"syscall"
+	"time"
 
 	"github.com/nyaruka/ezconf"
 	"github.com/nyaruka/gocommon/uuids"
@@ -65,6 +67,7 @@ func (u UTCLogFormatter) Format(e *logrus.Entry) ([]byte, error) {
 }
 
 func main() {
+	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator prior to GoLang 1.20
 	config := runtime.NewDefaultConfig()
 	config.Version = version
 	loader := ezconf.NewLoader(

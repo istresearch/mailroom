@@ -64,4 +64,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/nyaruka/goflow v0.163.0 => github.com/istresearch/goflow v0.2402.26-213
+replace github.com/nyaruka/goflow v0.163.0 => github.com/istresearch/goflow v0.2402.28-12
