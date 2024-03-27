@@ -165,10 +165,8 @@ github.com/gorilla/schema v1.2.0/go.mod h1:kgLaKoK1FELgZqMAVxx/5cbj0kT+57qxUrAlI
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
-github.com/istresearch/goflow v0.2401.9-190 h1:RG0d0/0TQ5y1IsrGVwM8pGOipBFh+WDlXlolVcRNpbA=
-github.com/istresearch/goflow v0.2401.9-190/go.mod h1:l9ofsG8/pcgfIyhEFYCQk1i9uGWBPbfc0nzNvJh2AZA=
-github.com/istresearch/goflow v0.2401.9-190.0.20240226212345-50dfb4a31c95/go.mod h1:l9ofsG8/pcgfIyhEFYCQk1i9uGWBPbfc0nzNvJh2AZA=
-github.com/istresearch/goflow v0.2402.26-213/go.mod h1:l9ofsG8/pcgfIyhEFYCQk1i9uGWBPbfc0nzNvJh2AZA=
+github.com/istresearch/goflow v0.2403.27-205 h1:+BNz2Oyph0bl+dDnTIBZL1Z9zBRS4oaaN31uC+Uq+CU=
+github.com/istresearch/goflow v0.2403.27-205/go.mod h1:l9ofsG8/pcgfIyhEFYCQk1i9uGWBPbfc0nzNvJh2AZA=
 github.com/jmespath/go-jmespath v0.4.0 h1:BEgLn5cpjn8UN1mAw4NjwDrS35OdebyEtFe+9YPoQUg=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1 h1:shLQSRRSCCPj3f2gpwzGwWFoC7ycTf1rcQZHOlsJ6N8=
