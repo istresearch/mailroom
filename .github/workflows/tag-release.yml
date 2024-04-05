@@ -1,4 +1,4 @@
-name: tag release
+name: "Tag Release"
 
 on:
   push:
@@ -7,30 +7,78 @@ on:
       - master
 
 jobs:
-  create-release:
+  build_cfg:
     runs-on: ubuntu-latest
+    outputs:
+      VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
+      VERSION_INT: ${{ steps.config_step.outputs.VERSION_INT }}
+      ALT_TAGS: ${{ steps.config_step.outputs.ALT_TAGS }}
+    permissions:
+      contents: write
     steps:
-      - name: "Create Version"
-        id: version_cfg
-        # note: Go lang requires tag format: v0.12.3-4
-        # see: https://stackoverflow.com/questions/62140832/why-golang-packages-have-to-be-v0-or-v1-and-not-v2020
+      - name: "Create Version STR"
+        id: config_step
         run: |-
           VER_BUILD=$(date +%H%M)
           # limit to only first 3 chars
           VER_BUILD=${VER_BUILD:0:3}
           # 'strict' semver segments cannot start with 0
-          VERSION_NUM="0.$(date +%y)$(date +%m).$(date +%-d)-${VER_BUILD#0}"
-          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_OUTPUT
+          VERSION_NUM="$(date +%y).$(date +%-m).$(date +%-d).${VER_BUILD#0}"
           # recreate as INT, leaving 0's in place; creates a 'reasonable' 32-bit signed int.
           VERSION_INT="$(date +%y)$(date +%m)$(date +%d)${VER_BUILD}"
           echo "VERSION_INT=${VERSION_INT}" >> $GITHUB_OUTPUT
 
-      - name: "Tag release"
-        uses: actions/create-release@v1
+          VERSION_STR=${VERSION_NUM}
+          ALT_TAGS=",ci-main"
+          echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
+          echo "ALT_TAGS=${ALT_TAGS}" >> $GITHUB_OUTPUT
+          echo "::notice::Version STR=${VERSION_STR}${ALT_TAGS}"
+
+      - name: "Create Release"
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ steps.version_cfg.outputs.VERSION_NUM }}
-          release_name: v${{ steps.version_cfg.outputs.VERSION_NUM }}
-          draft: false
-          prerelease: false
+          tag_name: v${{ steps.config_step.outputs.VERSION_STR }}
+          release_name: v${{ steps.config_step.outputs.VERSION_STR }}
+          generate_release_notes: true
+          target_commitish: ${{ github.ref_name }}
+  #endjob build_cfg
+
+  trigger-build:
+    runs-on: ubuntu-latest
+    needs: [build_cfg]
+    environment: default
+    env:
+      K8S_PROJECT: pulse-engage-mailroom
+      K8S_CONTAINER: mailroom
+      SLACK_DEPLOY_MSG:
+    steps:
+      - name: "Trigger Container Build"
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.CI_WEBHOOK_TOKEN }}
+          repository: istresearch/ci-docker
+          event-type: build-repo
+          client-payload: |-
+            {
+              "repo": {
+                "name": "${{ github.repository }}",
+                "ref_type": "${{ github.ref_type }}",
+                "ref_name": "${{ github.ref_name }}"
+              },
+              "image": {
+                "dockerfile": "Dockerfile",
+                "arch_allowed": "amd64",
+                "name": "${{ github.repository }}",
+                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}${{ needs.build_cfg.outputs.ALT_TAGS }}",
+                "build_args": [
+                ]
+              },
+              "callback": {
+                "repository": "${{ github.repository }}",
+                "event_type": "build_image_result",
+                "error_type": "build_image_error"
+              }
+            }
+  #endjob trigger-build
