@@ -79,7 +79,7 @@ jobs:
                 "dockerfile": "Dockerfile",
                 "arch_allowed": "amd64",
                 "name": "${{ github.repository }}",
-                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}${ALT_TAGS}",
+                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}${{ needs.build_cfg.outputs.ALT_TAGS }}",
                 "build_args": [
                 ]
               },
