@@ -14,15 +14,43 @@ jobs:
     environment: default
     outputs:
       VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
+      ALT_TAGS: ${{ steps.config_step.outputs.ALT_TAGS }}
     steps:
       - uses: actions/checkout@v3
 
       - name: "Determine Version"
         id: config_step
         run: |-
-          VERSION_STR=$(cat VERSION)
-          echo "::notice::Version STR=${VERSION_STR}"
+          #VER_KIND = 'alpha' (not deployed) | 'dev' | 'beta' | 'gold'
+          VER_KIND=alpha
+          
+          VER_BUILD=$(date +%H%M)
+          # limit to only first 3 chars
+          VER_BUILD=${VER_BUILD:0:3}
+          # 'strict' semver segments cannot start with 0
+          VERSION_NUM="$(date +%y).$(date +%-m).$(date +%-d).${VER_BUILD#0}"
+          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_OUTPUT
+          # recreate as INT, leaving 0's in place; creates a 'reasonable' 32-bit signed int.
+          VERSION_INT="$(date +%y)$(date +%m)$(date +%d)${VER_BUILD}"
+          echo "VERSION_INT=${VERSION_INT}" >> $GITHUB_OUTPUT
+          
+          REF_NAME="${{ github.ref_name }}"
+          if [[ ${REF_NAME} =~ ^(v)([[:digit:]]+\..*)$ ]]; then
+            VER_KIND=gold
+            VERSION_STR=${BASH_REMATCH[2]}
+          else
+            VERSION_STR=ci-${VERSION_NUM}
+            ALT_TAGS=""
+            if [[ "${REF_NAME}" == "develop" ]]; then
+              ALT_TAGS+=",ci-develop"
+            else
+              ALT_TAGS=",ci-dev-${REF_NAME#**/}"
+            fi
+          fi
           echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
+          echo "ALT_TAGS=${ALT_TAGS}" >> $GITHUB_OUTPUT
+
+          echo "::notice::Version KIND=${VER_KIND}, STR=${VERSION_STR}${ALT_TAGS}, INT=${VERSION_INT}"
   #endjob build_cfg
 
   trigger-build:
@@ -51,7 +79,7 @@ jobs:
                 "dockerfile": "Dockerfile",
                 "arch_allowed": "amd64 arm64",
                 "name": "${{ github.repository }}",
-                "version": "${{ needs.build_cfg.outputs.VERSION_STR }}",
+                "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}${ALT_TAGS}",
                 "build_args": [
                 ]
               },
