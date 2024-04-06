@@ -16,8 +16,6 @@ jobs:
       VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
       ALT_TAGS: ${{ steps.config_step.outputs.ALT_TAGS }}
     steps:
-      - uses: actions/checkout@v3
-
       - name: "Determine Version"
         id: config_step
         run: |-
@@ -63,7 +61,7 @@ jobs:
       SLACK_DEPLOY_MSG:
     steps:
       - name: "Trigger Container Build"
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
           repository: istresearch/ci-docker
