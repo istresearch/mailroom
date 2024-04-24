@@ -1,54 +1,48 @@
-name: build image
+name: "Tag Release"
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
       - master
-    tags:
-      - 'v*'
 
 jobs:
   build_cfg:
     runs-on: ubuntu-latest
-    environment: default
     outputs:
       VERSION_STR: ${{ steps.config_step.outputs.VERSION_STR }}
+      VERSION_INT: ${{ steps.config_step.outputs.VERSION_INT }}
       ALT_TAGS: ${{ steps.config_step.outputs.ALT_TAGS }}
+    permissions:
+      contents: write
     steps:
-      - name: "Determine Version"
+      - name: "Create Version STR"
         id: config_step
         run: |-
-          #VER_KIND = 'alpha' (not deployed) | 'dev' | 'beta' | 'gold'
-          VER_KIND=alpha
-          
           VER_BUILD=$(date +%H%M)
           # limit to only first 3 chars
           VER_BUILD=${VER_BUILD:0:3}
           # 'strict' semver segments cannot start with 0
           VERSION_NUM="$(date +%y).$(date +%-m).$(date +%-d).${VER_BUILD#0}"
-          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_OUTPUT
           # recreate as INT, leaving 0's in place; creates a 'reasonable' 32-bit signed int.
           VERSION_INT="$(date +%y)$(date +%m)$(date +%d)${VER_BUILD}"
           echo "VERSION_INT=${VERSION_INT}" >> $GITHUB_OUTPUT
-          
-          REF_NAME="${{ github.ref_name }}"
-          if [[ ${REF_NAME} =~ ^(v)([[:digit:]]+\..*)$ ]]; then
-            VER_KIND=gold
-            VERSION_STR=${BASH_REMATCH[2]}
-          else
-            VERSION_STR=ci-${VERSION_NUM}
-            ALT_TAGS=""
-            if [[ "${REF_NAME}" == "develop" ]]; then
-              ALT_TAGS+=",ci-develop"
-            else
-              ALT_TAGS=",ci-dev-${REF_NAME#**/}"
-            fi
-          fi
+
+          VERSION_STR=${VERSION_NUM}
+          ALT_TAGS=",ci-main"
           echo "VERSION_STR=${VERSION_STR}" >> $GITHUB_OUTPUT
           echo "ALT_TAGS=${ALT_TAGS}" >> $GITHUB_OUTPUT
+          echo "::notice::Version STR=${VERSION_STR}${ALT_TAGS}"
 
-          echo "::notice::Version KIND=${VER_KIND}, STR=${VERSION_STR}${ALT_TAGS}, INT=${VERSION_INT}"
+      - name: "Create Release"
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.config_step.outputs.VERSION_STR }}
+          release_name: v${{ steps.config_step.outputs.VERSION_STR }}
+          generate_release_notes: true
+          target_commitish: ${{ github.ref_name }}
   #endjob build_cfg
 
   trigger-build:
@@ -61,7 +55,7 @@ jobs:
       SLACK_DEPLOY_MSG:
     steps:
       - name: "Trigger Container Build"
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.CI_WEBHOOK_TOKEN }}
           repository: istresearch/ci-docker
@@ -80,12 +74,6 @@ jobs:
                 "tag": "${{ needs.build_cfg.outputs.VERSION_STR }}${{ needs.build_cfg.outputs.ALT_TAGS }}",
                 "build_args": [
                 ]
-              },
-              "deployment": {
-                "deploy_flag": "${{ github.ref_type == 'branch' }}",
-                "k8s_project": "${{ env.K8S_PROJECT }}",
-                "k8s_container": "${{ env.K8S_CONTAINER }}",
-                "deploy_msg": "${{ env.SLACK_DEPLOY_MSG }}"
               },
               "callback": {
                 "repository": "${{ github.repository }}",

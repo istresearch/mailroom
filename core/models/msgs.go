@@ -994,6 +994,9 @@ func (b *BroadcastBatch) CreateMessages(ctx context.Context, rt *runtime.Runtime
 					break
 				}
 			}
+		} else if false {
+			//<*((==<
+			//TODO
 		} else {
 			// no forced URN, find the first URN we can send to
 			for _, u := range contact.URNs() {
